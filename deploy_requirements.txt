@@ -5,3 +5,4 @@ emergentintegrations
 python-multipart>=0.0.9
 reportlab>=4.0.0
 stripe>=5.0.0
+slowapi>=0.1.9
