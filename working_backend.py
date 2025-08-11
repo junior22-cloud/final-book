@@ -205,7 +205,7 @@ async def export_pdf(request: Request):
                                 p.setFont("Helvetica-Bold", 24)
                                 p.translate(width / 2, height / 2)
                                 p.rotate(45)
-                                p.drawCentredText(0, 0, watermark_text)
+                                p.drawString(-text_width/2, -12, watermark_text)
                                 p.restoreState()
                                 p.setFillColor(Color(0, 0, 0))
                                 p.setFont("Helvetica", 12)
