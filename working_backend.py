@@ -355,13 +355,35 @@ def root():
         "message": f"{app_name} API", 
         "status": "ready",
         "features": {
-            "ai_providers": ["emergent_llm", "openai"] if openai_key else ["emergent_llm"],
+            "ai_providers": _get_available_ai_providers(),
             "database": "mongodb",
             "auth": "supabase" if supabase_url else "none",
             "payments": "stripe",
             "watermarking": "enabled"
         }
     }
+
+def _get_available_ai_providers():
+    """Dynamically detect available AI providers"""
+    providers = []
+    
+    if emergent_api_key and emergent_api_key.startswith('emg-'):
+        providers.append("emergent_api")
+    if emergent_key and emergent_key.startswith('sk-emergent'):
+        providers.append("emergent_integrations") 
+    
+    # Check for auto-integrated environment
+    try:
+        import emergent_llm
+        providers.append("emergent_auto")
+    except ImportError:
+        pass
+    
+    if openai_key:
+        providers.append("openai")
+    
+    providers.append("fallback")  # Always available
+    return providers
 
 @app.get("/api/test")
 def test_endpoint():
