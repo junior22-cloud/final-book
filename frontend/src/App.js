@@ -259,9 +259,13 @@ const BookGenerator = () => {
                     <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                       📧 Email Book
                     </button>
-                    <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    <a
+                      href={`${API}/book/${generatedBook.id}/pdf`}
+                      download
+                      className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors inline-block text-center"
+                    >
                       📄 Download PDF
-                    </button>
+                    </a>
                   </div>
                 </div>
 
