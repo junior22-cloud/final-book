@@ -487,7 +487,59 @@ async def export_pdf(request: Request):
 # Simple test endpoints
 @app.get("/api/test")
 async def test():
-    return {"message": "API is working", "endpoints": ["/api/generate", "/api/export"]}
+    return {"message": "API is working", "endpoints": ["/api/generate", "/api/export", "/api/checkout"]}
+
+@app.post("/api/checkout")
+async def create_checkout_session(request: Request):
+    """Create Stripe checkout session - matches your exact Next.js style"""
+    try:
+        data = await request.json()
+        
+        # Get the origin from headers for success/cancel URLs
+        origin = request.headers.get('origin', 'http://localhost:3000')
+        
+        # Create checkout session (exactly like your Next.js version)
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'usd',
+                    'product_data': {
+                        'name': 'AI Book',
+                        'description': 'Professional AI-generated book content'
+                    },
+                    'unit_amount': 999,  # $9.99
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url=f"{origin}/success?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{origin}/cancel",
+            metadata={
+                'book_type': data.get('book_type', 'fantasy_chapter'),
+                'prompt': data.get('prompt', 'Write a fantasy novel chapter')
+            }
+        )
+        
+        return {"id": session.id}
+        
+    except Exception as e:
+        logging.error(f"Stripe checkout failed: {str(e)}")
+        return {"error": f"Checkout failed: {str(e)}"}
+
+@app.get("/api/session/{session_id}")
+async def get_session(session_id: str):
+    """Retrieve payment session details"""
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+        return {
+            "status": session.payment_status,
+            "customer_email": session.customer_details.email if session.customer_details else None,
+            "metadata": session.metadata
+        }
+    except Exception as e:
+        logging.error(f"Session retrieval failed: {str(e)}")
+        return {"error": str(e)}
 
 if __name__ == "__main__":
     import uvicorn
