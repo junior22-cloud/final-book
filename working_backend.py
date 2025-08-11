@@ -150,7 +150,7 @@ async def export_pdf(request: Request):
         # Rotate and draw watermark
         p.translate(x_center, y_center)  # Move to center
         p.rotate(45)  # Rotate 45 degrees (Math.PI / 4 in radians)
-        p.drawCentredText(0, 0, watermark_text)
+        p.drawString(-text_width/2, -12, watermark_text)  # Center the text
         
         p.restoreState()  # Restore state for main content
         
