@@ -17,6 +17,9 @@ import stripe
 # Load environment variables
 load_dotenv()
 
+# Configure Stripe
+stripe.api_key = os.environ.get('STRIPE_SECRET_KEY', 'sk_test_your_key_here')
+
 # Create FastAPI app
 app = FastAPI(title="AI Book Generator", version="1.0.0")
 
