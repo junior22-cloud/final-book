@@ -409,7 +409,10 @@ async def export_pdf(request: Request):
         data = await request.json()
         text = data.get("text", "No content provided")
         
-        # Create PDF using reportlab (similar to pdf-lib but for Python)
+        # Clean text for PDF generation
+        text = text.replace('\r\n', '\n').replace('\r', '\n')
+        
+        # Create PDF using reportlab
         buffer = BytesIO()
         p = canvas.Canvas(buffer, pagesize=letter)
         width, height = letter
@@ -417,29 +420,50 @@ async def export_pdf(request: Request):
         # Set up text formatting
         p.setFont("Helvetica", 12)
         
-        # Split text into lines that fit the page
+        # Split text into lines
         lines = text.split('\n')
         y_position = height - 50  # Start from top with margin
+        line_height = 15
         
         for line in lines:
-            if y_position < 50:  # Start new page if needed
+            # Handle page breaks
+            if y_position < 50:
                 p.showPage()
                 p.setFont("Helvetica", 12)
                 y_position = height - 50
             
-            # Handle long lines
-            if len(line) > 80:  # Wrap long lines
-                wrapped_lines = simpleSplit(line, "Helvetica", 12, width - 100)
-                for wrapped_line in wrapped_lines:
+            # Clean line for PDF
+            line = line.encode('latin-1', 'replace').decode('latin-1')
+            
+            # Handle long lines by wrapping
+            max_chars_per_line = 80
+            if len(line) > max_chars_per_line:
+                words = line.split(' ')
+                current_line = ''
+                for word in words:
+                    if len(current_line + ' ' + word) < max_chars_per_line:
+                        current_line += (' ' + word if current_line else word)
+                    else:
+                        if current_line:
+                            if y_position < 50:
+                                p.showPage()
+                                p.setFont("Helvetica", 12)
+                                y_position = height - 50
+                            p.drawString(50, y_position, current_line)
+                            y_position -= line_height
+                        current_line = word
+                
+                # Draw remaining text
+                if current_line:
                     if y_position < 50:
                         p.showPage()
                         p.setFont("Helvetica", 12)
                         y_position = height - 50
-                    p.drawString(50, y_position, wrapped_line)
-                    y_position -= 15
+                    p.drawString(50, y_position, current_line)
+                    y_position -= line_height
             else:
                 p.drawString(50, y_position, line)
-                y_position -= 15
+                y_position -= line_height
         
         p.save()
         buffer.seek(0)
