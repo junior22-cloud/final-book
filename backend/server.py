@@ -577,6 +577,14 @@ async def generate_book(request: BookRequest):
         logging.error(f"Book generation failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Book generation failed: {str(e)}")
 
+@api_router.get("/book/{book_id}")
+async def get_book(book_id: str):
+    """Retrieve a generated book by ID"""
+    book = await db.book_orders.find_one({"id": book_id})
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+    return book
+
 @api_router.get("/book/{book_id}/pdf")
 async def download_book_pdf(book_id: str):
     """Download a generated book as PDF"""
