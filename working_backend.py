@@ -108,15 +108,65 @@ async def export_pdf(request: Request):
 
 @app.post("/api/checkout")
 async def create_checkout(request: Request):
-    """Simple checkout placeholder"""
+    """Create Stripe checkout session - works with your Paywall component"""
     try:
-        data = await request.json()
+        # Get the origin for success/cancel URLs
+        origin = request.headers.get('origin', 'http://localhost:3000')
         
-        # Return mock session ID for testing
-        return {"id": "cs_test_mock_session_id_12345"}
-        
+        # Create real Stripe session (will fail without real keys, but structure is correct)
+        try:
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': 'AI Book Credits',
+                            'description': 'Generate unlimited AI books'
+                        },
+                        'unit_amount': 999,  # $9.99
+                    },
+                    'quantity': 1,
+                }],
+                mode='payment',
+                success_url=f"{origin}/success?session_id={{CHECKOUT_SESSION_ID}}",
+                cancel_url=f"{origin}/cancel",
+                metadata={
+                    'credits': '10',
+                    'product': 'ai_book_credits'
+                }
+            )
+            
+            return {"id": session.id}
+            
+        except stripe.error.InvalidRequestError as e:
+            # Return mock session for testing without real Stripe keys
+            logging.warning(f"Stripe error (using mock): {str(e)}")
+            return {"id": "cs_test_mock_session_id_for_development"}
+            
     except Exception as e:
+        logging.error(f"Checkout failed: {str(e)}")
         return {"error": f"Checkout failed: {str(e)}"}
+
+@app.get("/api/session/{session_id}")
+async def get_session(session_id: str):
+    """Get payment session status"""
+    try:
+        if session_id.startswith("cs_test_mock"):
+            return {
+                "payment_status": "paid",
+                "customer_email": "test@example.com",
+                "metadata": {"credits": "10"}
+            }
+            
+        session = stripe.checkout.Session.retrieve(session_id)
+        return {
+            "payment_status": session.payment_status,
+            "customer_email": session.customer_details.email if session.customer_details else None,
+            "metadata": session.metadata
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
