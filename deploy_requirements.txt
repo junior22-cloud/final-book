@@ -3,3 +3,4 @@ uvicorn==0.25.0
 python-dotenv>=1.0.1
 emergentintegrations
 python-multipart>=0.0.9
+reportlab>=4.0.0
