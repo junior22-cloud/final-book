@@ -660,7 +660,7 @@ async def download_book_pdf(book_id: str):
                     For {book['book_request']['audience']} • {book['word_count']} words
                 </p>
                 <p style="font-size: 12px; color: #95a5a6;">
-                    Generated on {book['created_at'][:10]} by AI Book Generator
+                    Generated on {book['created_at'].strftime('%Y-%m-%d')} by AI Book Generator
                 </p>
             </div>
             {html_content}
