@@ -8,3 +8,5 @@ stripe>=5.0.0
 slowapi>=0.1.9
 openai>=1.0.0
 supabase>=2.0.0
+aiohttp>=3.8.0
+emergent_llm
