@@ -25,6 +25,7 @@ load_dotenv()
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY', 'sk_test_51234567890_test_key')
 openai_key = os.environ.get('OPENAI_KEY')
 emergent_key = os.environ.get('EMERGENT_LLM_KEY', 'sk-emergent-b363d2bC56cA76b201')
+emergent_api_key = os.environ.get('EMERGENT_API_KEY')  # New format: emg-...
 
 # Supabase configuration (optional)
 supabase_url = os.environ.get('NEXT_PUBLIC_SUPABASE_URL')
