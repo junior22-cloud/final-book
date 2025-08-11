@@ -73,17 +73,17 @@ class AIBookGenerator:
         if "technical" in request.topic.lower() or "programming" in request.topic.lower():
             # Use GPT-4 for technical content
             model_provider = "openai"
-            model_name = "gpt-4o"
+            model_name = "gpt-4o-mini"
             style_instruction = "technical yet accessible"
         elif "story" in request.topic.lower() or "creative" in request.topic.lower():
             # Use Claude for creative content
             model_provider = "anthropic"
-            model_name = "claude-3-7-sonnet-20250219"
+            model_name = "claude-3-5-sonnet-20241022"
             style_instruction = "engaging and narrative-driven"
         else:
-            # Use Gemini for general content
-            model_provider = "gemini"
-            model_name = "gemini-2.0-flash"
+            # Use OpenAI for general content (more reliable)
+            model_provider = "openai"
+            model_name = "gpt-4o-mini"
             style_instruction = "clear and informative"
 
         system_message = f"""You are an expert book author specializing in creating high-quality, comprehensive books. 
@@ -127,24 +127,38 @@ class AIBookGenerator:
         Start writing the complete book now:
         """
 
-        try:
-            # Initialize chat with appropriate model
-            chat = LlmChat(
-                api_key=self.api_key,
-                session_id=f"book-gen-{uuid.uuid4()}",
-                system_message=system_message
-            ).with_model(model_provider, model_name)
-            
-            # Generate the book
-            user_message = UserMessage(text=user_prompt)
-            response = await chat.send_message(user_message)
-            
-            return response
-            
-        except Exception as e:
-            logging.error(f"AI generation failed: {str(e)}")
-            # Fallback content
-            return self._generate_fallback_book(request)
+        # Try multiple approaches with proper error handling
+        for attempt in range(3):
+            try:
+                logging.info(f"Attempt {attempt + 1}: Generating book with {model_provider}/{model_name}")
+                
+                # Initialize chat with appropriate model
+                chat = LlmChat(
+                    api_key=self.api_key,
+                    session_id=f"book-gen-{uuid.uuid4()}-{attempt}",
+                    system_message=system_message
+                ).with_model(model_provider, model_name)
+                
+                # Generate the book
+                user_message = UserMessage(text=user_prompt)
+                response = await chat.send_message(user_message)
+                
+                if response and len(response.strip()) > 500:  # Validate response quality
+                    logging.info(f"Successfully generated book with {len(response)} characters")
+                    return response
+                else:
+                    logging.warning(f"Generated response too short: {len(response) if response else 0} characters")
+                    
+            except Exception as e:
+                logging.error(f"Attempt {attempt + 1} failed: {str(e)}")
+                if attempt < 2:  # Try different model on retry
+                    model_provider = "openai"
+                    model_name = "gpt-4o-mini"
+                continue
+        
+        # All attempts failed, use enhanced fallback
+        logging.warning("All AI generation attempts failed, using enhanced fallback")
+        return self._generate_enhanced_fallback_book(request)
     
     def _generate_fallback_book(self, request: BookRequest) -> str:
         """Fallback book generation if AI fails"""
