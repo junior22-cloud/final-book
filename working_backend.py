@@ -17,7 +17,14 @@ load_dotenv()
 # Configure Stripe - use test key for now
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY', 'sk_test_51234567890_test_key')
 
+# Configure Rate Limiter
+limiter = Limiter(key_func=get_remote_address)
+
 app = FastAPI()
+
+# Add rate limit handler
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Add CORS middleware
 app.add_middleware(
