@@ -72,7 +72,7 @@ export default function BookGenerator() {
   };
 
   // Check URL for successful payment
-  React.useEffect(() => {
+  useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get('session_id');
     if (sessionId) {
