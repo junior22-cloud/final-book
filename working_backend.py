@@ -10,6 +10,11 @@ import logging
 import json
 import stripe
 from dotenv import load_dotenv
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.colors import Color
+from io import BytesIO
+import math
 
 # Load environment variables
 load_dotenv()
