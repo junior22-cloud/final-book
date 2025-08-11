@@ -52,7 +52,17 @@ app.add_middleware(
 
 @app.get("/")
 def root():
-    return {"message": "AI Book Generator API", "status": "ready"}
+    return {
+        "message": f"{app_name} API", 
+        "status": "ready",
+        "features": {
+            "ai_providers": ["emergent_llm", "openai"] if openai_key else ["emergent_llm"],
+            "database": "mongodb",
+            "auth": "supabase" if supabase_url else "none",
+            "payments": "stripe",
+            "watermarking": "enabled"
+        }
+    }
 
 @app.get("/api/test")
 def test_endpoint():
