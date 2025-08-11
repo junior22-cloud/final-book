@@ -1,10 +1,17 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 import os
 import logging
 from dotenv import load_dotenv
 import uuid
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from io import BytesIO
+from reportlab.lib.utils import simpleSplit
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 # Load environment variables
 load_dotenv()
