@@ -168,6 +168,22 @@ async def create_checkout(request: Request):
 @limiter.limit("10/minute")
 async def get_session(session_id: str, request: Request):
     """Get payment session status - rate limited"""
+    try:
+        if session_id.startswith("cs_test_mock"):
+            return {
+                "payment_status": "paid",
+                "customer_email": "test@example.com",
+                "metadata": {"credits": "10"}
+            }
+            
+        session = stripe.checkout.Session.retrieve(session_id)
+        return {
+            "payment_status": session.payment_status,
+            "customer_email": session.customer_details.email if session.customer_details else None,
+            "metadata": session.metadata
+        }
+    except Exception as e:
+        return {"error": str(e)}
     """Get payment session status"""
     try:
         if session_id.startswith("cs_test_mock"):
