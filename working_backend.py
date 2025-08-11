@@ -46,61 +46,132 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # Enhanced AI Generation Service
 class MultiAIGenerator:
     def __init__(self):
-        self.emergent_key = emergent_key
+        # Support multiple Emergent API formats
+        self.emergent_key = emergent_key  # Current format: sk-emergent-...
+        self.emergent_api_key = os.environ.get('EMERGENT_API_KEY')  # New format: emg-...
         self.openai_key = openai_key
     
     async def generate_content(self, prompt: str) -> str:
-        """Generate content using available AI providers"""
+        """Generate content using available AI providers with intelligent routing"""
         
-        # Try Emergent LLM first (multi-model)
-        if self.emergent_key:
+        # Try Direct Emergent API first (new format)
+        if self.emergent_api_key and self.emergent_api_key.startswith('emg-'):
             try:
-                from emergentintegrations.llm.chat import LlmChat, UserMessage
-                
-                system_message = f"""You are an expert author for {app_name}. Create high-quality, comprehensive content that provides real value. Format your response in clean markdown with professional structure."""
-                
-                chat = LlmChat(
-                    api_key=self.emergent_key,
-                    session_id=f"bookwiz-{uuid.uuid4()}",
-                    system_message=system_message
-                ).with_model("openai", "gpt-4o-mini")
-                
-                user_message = UserMessage(text=prompt)
-                response = await chat.send_message(user_message)
-                
-                if response and len(response.strip()) > 200:
-                    logging.info("Generated content using Emergent LLM")
-                    return response
-                    
+                content = await self._generate_with_direct_emergent(prompt)
+                if content and len(content.strip()) > 200:
+                    logging.info("Generated content using Direct Emergent API")
+                    return content
             except Exception as e:
-                logging.warning(f"Emergent LLM failed: {str(e)}")
+                logging.warning(f"Direct Emergent API failed: {str(e)}")
+        
+        # Try Emergent Integrations (current format)
+        if self.emergent_key and self.emergent_key.startswith('sk-emergent'):
+            try:
+                content = await self._generate_with_emergent_integrations(prompt)
+                if content and len(content.strip()) > 200:
+                    logging.info("Generated content using Emergent Integrations")
+                    return content
+            except Exception as e:
+                logging.warning(f"Emergent Integrations failed: {str(e)}")
+        
+        # Try environment-based Emergent (auto-integrated)
+        try:
+            content = await self._generate_with_auto_emergent(prompt)
+            if content and len(content.strip()) > 200:
+                logging.info("Generated content using Auto Emergent")
+                return content
+        except Exception as e:
+            logging.warning(f"Auto Emergent failed: {str(e)}")
         
         # Fallback to OpenAI if available
         if self.openai_key:
             try:
-                import openai
-                openai.api_key = self.openai_key
-                
-                response = await openai.ChatCompletion.acreate(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {"role": "system", "content": f"You are an expert author for {app_name}. Create high-quality, comprehensive content."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    max_tokens=2000,
-                    temperature=0.7
-                )
-                
-                content = response.choices[0].message.content
+                content = await self._generate_with_openai(prompt)
                 if content and len(content.strip()) > 200:
                     logging.info("Generated content using OpenAI")
                     return content
-                    
             except Exception as e:
                 logging.warning(f"OpenAI failed: {str(e)}")
         
         # Final fallback - high quality template
         return self._generate_fallback_content(prompt)
+    
+    async def _generate_with_direct_emergent(self, prompt: str) -> str:
+        """Generate using Direct Emergent API (new format)"""
+        import aiohttp
+        
+        url = "https://api.emergentllm.com/v1/generate"
+        headers = {
+            "Authorization": f"Bearer {self.emergent_api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        data = {
+            "prompt": f"Write a comprehensive, professional guide about: {prompt}",
+            "style": "professional-educational",
+            "audience": "general-readers",
+            "max_tokens": 2000
+        }
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=data, headers=headers) as response:
+                result = await response.json()
+                return result.get("content", "")
+    
+    async def _generate_with_emergent_integrations(self, prompt: str) -> str:
+        """Generate using Emergent Integrations (current format)"""
+        try:
+            from emergentintegrations.llm.chat import LlmChat, UserMessage
+            
+            system_message = f"""You are an expert author for {app_name}. Create high-quality, comprehensive content that provides real value. Format your response in clean markdown with professional structure."""
+            
+            chat = LlmChat(
+                api_key=self.emergent_key,
+                session_id=f"bookwiz-{uuid.uuid4()}",
+                system_message=system_message
+            ).with_model("openai", "gpt-4o-mini")
+            
+            user_message = UserMessage(text=prompt)
+            response = await chat.send_message(user_message)
+            return response
+            
+        except ImportError:
+            logging.warning("emergentintegrations library not available")
+            return ""
+    
+    async def _generate_with_auto_emergent(self, prompt: str) -> str:
+        """Generate using auto-integrated Emergent (no key needed)"""
+        try:
+            # This would work in supported environments
+            from emergent_llm import generate
+            response = generate(f"Write a comprehensive guide: {prompt}")
+            return response
+        except ImportError:
+            logging.debug("emergent_llm not available in this environment")
+            return ""
+    
+    async def _generate_with_openai(self, prompt: str) -> str:
+        """Generate using OpenAI API"""
+        try:
+            import openai
+            
+            client = openai.AsyncOpenAI(api_key=self.openai_key)
+            
+            response = await client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": f"You are an expert author for {app_name}. Create high-quality, comprehensive content."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=2000,
+                temperature=0.7
+            )
+            
+            return response.choices[0].message.content
+            
+        except Exception as e:
+            logging.error(f"OpenAI API error: {str(e)}")
+            return ""
     
     def _generate_fallback_content(self, prompt: str) -> str:
         """High-quality fallback content when AI services are unavailable"""
