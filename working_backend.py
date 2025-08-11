@@ -41,7 +41,17 @@ def root():
 
 @app.get("/api/test")
 def test_endpoint():
-    return {"status": "active", "version": "1.0", "endpoints": ["generate", "export", "checkout"]}
+    return {
+        "status": "active", 
+        "version": "1.0", 
+        "endpoints": ["generate", "export", "checkout"],
+        "rate_limits": {
+            "generate": "10/minute",
+            "export": "20/minute", 
+            "checkout": "5/minute",
+            "session": "10/minute"
+        }
+    }
 
 @app.post("/api/generate")
 @limiter.limit("10/minute")  # 10 requests per minute (same as your Next.js version)
