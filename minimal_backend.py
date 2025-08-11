@@ -402,6 +402,65 @@ async def generate_book(request: Request):
 async def health():
     return {"status": "healthy"}
 
+@app.post("/api/export")
+async def export_pdf(request: Request):
+    """Export text to PDF - matches your exact component interface"""
+    try:
+        data = await request.json()
+        text = data.get("text", "No content provided")
+        
+        # Create PDF using reportlab (similar to pdf-lib but for Python)
+        buffer = BytesIO()
+        p = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+        
+        # Set up text formatting
+        p.setFont("Helvetica", 12)
+        
+        # Split text into lines that fit the page
+        lines = text.split('\n')
+        y_position = height - 50  # Start from top with margin
+        
+        for line in lines:
+            if y_position < 50:  # Start new page if needed
+                p.showPage()
+                p.setFont("Helvetica", 12)
+                y_position = height - 50
+            
+            # Handle long lines
+            if len(line) > 80:  # Wrap long lines
+                wrapped_lines = simpleSplit(line, "Helvetica", 12, width - 100)
+                for wrapped_line in wrapped_lines:
+                    if y_position < 50:
+                        p.showPage()
+                        p.setFont("Helvetica", 12)
+                        y_position = height - 50
+                    p.drawString(50, y_position, wrapped_line)
+                    y_position -= 15
+            else:
+                p.drawString(50, y_position, line)
+                y_position -= 15
+        
+        p.save()
+        buffer.seek(0)
+        pdf_bytes = buffer.getvalue()
+        buffer.close()
+        
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": "attachment; filename=generated_book.pdf"}
+        )
+        
+    except Exception as e:
+        logging.error(f"PDF export failed: {str(e)}")
+        return {"error": f"PDF export failed: {str(e)}"}
+
+# Simple test endpoints
+@app.get("/api/test")
+async def test():
+    return {"message": "API is working", "endpoints": ["/api/generate", "/api/export"]}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
