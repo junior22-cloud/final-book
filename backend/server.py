@@ -577,13 +577,104 @@ async def generate_book(request: BookRequest):
         logging.error(f"Book generation failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Book generation failed: {str(e)}")
 
-@api_router.get("/book/{book_id}")
-async def get_book(book_id: str):
-    """Retrieve a generated book by ID"""
+@api_router.get("/book/{book_id}/pdf")
+async def download_book_pdf(book_id: str):
+    """Download a generated book as PDF"""
     book = await db.book_orders.find_one({"id": book_id})
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
-    return book
+    
+    try:
+        # Convert markdown to HTML
+        html_content = markdown.markdown(book['content'], extensions=['codehilite', 'fenced_code'])
+        
+        # Create styled HTML
+        styled_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>{book['book_request']['topic']}</title>
+            <style>
+                body {{
+                    font-family: Georgia, serif;
+                    line-height: 1.6;
+                    max-width: 800px;
+                    margin: 0 auto;
+                    padding: 40px;
+                    color: #333;
+                }}
+                h1 {{ 
+                    color: #2c3e50;
+                    border-bottom: 3px solid #3498db;
+                    padding-bottom: 10px;
+                }}
+                h2 {{ 
+                    color: #34495e;
+                    margin-top: 30px;
+                }}
+                h3 {{ 
+                    color: #7f8c8d;
+                }}
+                blockquote {{
+                    border-left: 4px solid #3498db;
+                    margin: 20px 0;
+                    padding-left: 20px;
+                    font-style: italic;
+                }}
+                code {{
+                    background-color: #f8f9fa;
+                    padding: 2px 6px;
+                    border-radius: 3px;
+                    font-family: 'Courier New', monospace;
+                }}
+                pre {{
+                    background-color: #f8f9fa;
+                    padding: 15px;
+                    border-radius: 5px;
+                    overflow-x: auto;
+                }}
+                .pro-tip {{
+                    background-color: #e8f5e8;
+                    border-left: 4px solid #27ae60;
+                    padding: 10px;
+                    margin: 15px 0;
+                }}
+                .page-break {{
+                    page-break-before: always;
+                }}
+            </style>
+        </head>
+        <body>
+            <div style="text-align: center; margin-bottom: 40px;">
+                <h1>{book['book_request']['topic']}</h1>
+                <p style="font-style: italic; color: #7f8c8d;">
+                    For {book['book_request']['audience']} • {book['word_count']} words
+                </p>
+                <p style="font-size: 12px; color: #95a5a6;">
+                    Generated on {book['created_at'][:10]} by AI Book Generator
+                </p>
+            </div>
+            {html_content}
+        </body>
+        </html>
+        """
+        
+        # Generate PDF
+        pdf_buffer = io.BytesIO()
+        HTML(string=styled_html).write_pdf(pdf_buffer)
+        pdf_buffer.seek(0)
+        
+        # Return PDF as streaming response
+        return StreamingResponse(
+            io.BytesIO(pdf_buffer.getvalue()), 
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={book['book_request']['topic'].replace(' ', '_')}.pdf"}
+        )
+        
+    except Exception as e:
+        logging.error(f"PDF generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="PDF generation failed")
 
 @api_router.get("/books")
 async def list_books(limit: int = 10):
