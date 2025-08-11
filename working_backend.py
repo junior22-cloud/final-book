@@ -5,10 +5,14 @@ import uvicorn
 import os
 import logging
 import json
+import stripe
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+
+# Configure Stripe - use test key for now
+stripe.api_key = os.environ.get('STRIPE_SECRET_KEY', 'sk_test_51234567890_test_key')
 
 app = FastAPI()
 
