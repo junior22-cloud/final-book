@@ -44,11 +44,14 @@ def test_endpoint():
     return {"status": "active", "version": "1.0", "endpoints": ["generate", "export", "checkout"]}
 
 @app.post("/api/generate")
+@limiter.limit("10/minute")  # 10 requests per minute (same as your Next.js version)
 async def generate_content(request: Request):
-    """Generate content from a prompt - simplified version"""
+    """Generate content from a prompt - rate limited to prevent abuse"""
     try:
         data = await request.json()
         prompt = data.get("prompt", "Write a book")
+        
+        logging.info(f"Generating content for prompt: {prompt[:50]}...")
         
         # For now, return high-quality fallback content
         # We can add AI integration once this works
@@ -89,7 +92,8 @@ Summary and next steps for continued success.
 
 Word Count: ~200 words (expandable to 1000+ words in full version)
 Quality: Professional grade
-Format: Ready for PDF conversion"""
+Format: Ready for PDF conversion
+Rate Limited: ✅ Protected against abuse"""
 
         return {"text": content}
         
@@ -98,8 +102,9 @@ Format: Ready for PDF conversion"""
         return {"text": f"Error generating content. Please try again."}
 
 @app.post("/api/export") 
+@limiter.limit("20/minute")  # More generous limit for PDF downloads
 async def export_pdf(request: Request):
-    """Simple PDF export - placeholder for now"""
+    """PDF export - rate limited but more generous than generation"""
     try:
         data = await request.json()
         text = data.get("text", "No content")
@@ -117,8 +122,9 @@ async def export_pdf(request: Request):
         return {"error": f"PDF export failed: {str(e)}"}
 
 @app.post("/api/checkout")
+@limiter.limit("5/minute")  # Stricter limit for payment endpoints
 async def create_checkout(request: Request):
-    """Create Stripe checkout session - works with your Paywall component"""
+    """Create Stripe checkout session - strictly rate limited"""
     try:
         # Get the origin for success/cancel URLs
         origin = request.headers.get('origin', 'http://localhost:3000')
@@ -159,7 +165,9 @@ async def create_checkout(request: Request):
         return {"error": f"Checkout failed: {str(e)}"}
 
 @app.get("/api/session/{session_id}")
-async def get_session(session_id: str):
+@limiter.limit("10/minute")
+async def get_session(session_id: str, request: Request):
+    """Get payment session status - rate limited"""
     """Get payment session status"""
     try:
         if session_id.startswith("cs_test_mock"):
