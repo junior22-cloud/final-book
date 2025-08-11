@@ -1,5 +1,5 @@
 // Complete BookGenerator with Paywall Integration
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { saveAs } from 'file-saver';
 import { loadStripe } from '@stripe/stripe-js';
 
