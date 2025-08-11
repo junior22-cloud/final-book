@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookWiz Generator - AI-Powered Books</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin: 20px 0; }
+        .button { padding: 15px 30px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin: 10px; }
+        .primary { background: #4F46E5; color: white; }
+        .success { background: #059669; color: white; }
+        .danger { background: #DC2626; color: white; }
+        .primary:hover { background: #4338CA; }
+        .success:hover { background: #047857; }
+        .content { background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0; max-height: 400px; overflow-y: auto; }
+        pre { white-space: pre-wrap; font-size: 14px; line-height: 1.6; }
+        .error { background: #FEE2E2; border: 1px solid #F87171; color: #B91C1C; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .success-msg { background: #D1FAE5; border: 1px solid #10B981; color: #065F46; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .loading { opacity: 0.6; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function BookWizApp() {
+            const [output, setOutput] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+            const [hasPaid, setHasPaid] = useState(false);
+            
+            const API_URL = 'http://localhost:8000'; // Change this for production
+
+            const generate = async (prompt) => {
+                setLoading(true);
+                setError('');
+                
+                try {
+                    const res = await fetch(`${API_URL}/api/generate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt })
+                    });
+                    
+                    if (res.status === 429) {
+                        setError('Rate limit exceeded. Please wait a minute before generating again.');
+                        setLoading(false);
+                        return;
+                    }
+                    
+                    const data = await res.json();
+                    if (data.text) {
+                        setOutput(data.text);
+                    } else {
+                        setError('Failed to generate content. Please try again.');
+                    }
+                } catch (error) {
+                    setError('Network error. Please check your connection.');
+                }
+                setLoading(false);
+            };
+
+            const downloadPDF = async () => {
+                if (!output) return;
+                
+                try {
+                    const res = await fetch(`${API_URL}/api/export`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: output })
+                    });
+                    
+                    if (res.ok) {
+                        const blob = await res.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `bookwiz-${Date.now()}.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                    } else {
+                        setError('PDF generation failed. Please try again.');
+                    }
+                } catch (error) {
+                    setError('PDF export failed. Please try again.');
+                }
+            };
+
+            const handlePayment = async () => {
+                try {
+                    const res = await fetch(`${API_URL}/api/checkout`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    });
+                    
+                    const { id, error } = await res.json();
+                    
+                    if (error) {
+                        if (id === "cs_test_mock_session_id_for_development") {
+                            setHasPaid(true);
+                            setError('');
+                            alert('🎉 Payment successful (Demo Mode)! You can now generate books.');
+                            return;
+                        }
+                        setError('Payment setup required. Please add your Stripe keys.');
+                        return;
+                    }
+                    
+                    // This would redirect to Stripe in production
+                    const stripe = Stripe('pk_test_your_stripe_publishable_key_here');
+                    await stripe.redirectToCheckout({ sessionId: id });
+                    
+                } catch (error) {
+                    setError('Payment failed. Please try again.');
+                }
+            };
+
+            return (
+                <div className="container">
+                    <div className="card">
+                        <h1 style={{ textAlign: 'center', color: '#1F2937', fontSize: '36px', margin: '0 0 10px 0' }}>
+                            📚 BookWiz Generator
+                        </h1>
+                        <p style={{ textAlign: 'center', color: '#6B7280', fontSize: '16px', marginTop: '10px' }}>
+                            Professional AI books with watermarked PDFs • Rate-limited for quality
+                        </p>
+                    </div>
+
+                    {error && (
+                        <div className="error">
+                            {error}
+                        </div>
+                    )}
+
+                    {!hasPaid ? (
+                        <div className="card" style={{ textAlign: 'center' }}>
+                            <h2>Get Professional AI Book Generation</h2>
+                            <p style={{ color: '#6B7280', marginBottom: '30px' }}>
+                                Generate high-quality books with professional watermarked PDFs
+                            </p>
+                            
+                            <button className="button primary" onClick={handlePayment}>
+                                Buy BookWiz Credits ($9.99)
+                            </button>
+                            
+                            <div style={{ marginTop: '30px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+                                <div style={{ padding: '15px', backgroundColor: '#F3F4F6', borderRadius: '8px' }}>
+                                    <h4 style={{ margin: '0 0 10px 0' }}>✨ Watermarked PDFs</h4>
+                                    <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>
+                                        Professional "Generated by BookWiz" watermarks
+                                    </p>
+                                </div>
+                                <div style={{ padding: '15px', backgroundColor: '#F3F4F6', borderRadius: '8px' }}>
+                                    <h4 style={{ margin: '0 0 10px 0' }}>⚡ Rate Protected</h4>
+                                    <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>
+                                        10 generations/min for quality control
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div>
+                            <div className="success-msg" style={{ textAlign: 'center' }}>
+                                ✅ <strong>BookWiz Activated!</strong> Generate professional books with watermarked PDFs.
+                            </div>
+
+                            <div className="card">
+                                <h3>Generate Your Professional Book:</h3>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px', marginBottom: '20px' }}>
+                                    <button 
+                                        className={`button primary ${loading ? 'loading' : ''}`}
+                                        onClick={() => generate("Write an epic fantasy novel chapter with dragons and magic")}
+                                        disabled={loading}
+                                    >
+                                        {loading ? '⏳ Generating...' : '🐉 Epic Fantasy Chapter'}
+                                    </button>
+                                    
+                                    <button 
+                                        className={`button success ${loading ? 'loading' : ''}`}
+                                        onClick={() => generate("Write a comprehensive Python programming guide for beginners")}
+                                        disabled={loading}
+                                    >
+                                        {loading ? '⏳ Generating...' : '🐍 Python Guide'}
+                                    </button>
+                                    
+                                    <button 
+                                        className={`button danger ${loading ? 'loading' : ''}`}
+                                        onClick={() => generate("Write a detailed business plan for opening a successful coffee shop")}
+                                        disabled={loading}
+                                    >
+                                        {loading ? '⏳ Generating...' : '☕ Business Plan'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {output && (
+                                <div className="card">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                        <h4>📄 Your Generated Book</h4>
+                                        <button className="button success" onClick={downloadPDF}>
+                                            📄 Download Watermarked PDF
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="content">
+                                        <pre>{output}</pre>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="card" style={{ marginTop: '30px', textAlign: 'center', fontSize: '12px', color: '#6B7280' }}>
+                        <strong>🏭 BookWiz Professional Features:</strong><br/>
+                        Rate Limiting: 10 req/min • Watermarking: Every PDF • Multi-AI: Automatic routing
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<BookWizApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>
