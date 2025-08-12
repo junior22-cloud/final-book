@@ -187,7 +187,7 @@ async def generate_pdf(topic: str):
     """Generate and return PDF directly"""
     try:
         # Generate book content
-        content = generate_book(topic)
+        content = await generate_book(topic)
         
         # Create PDF
         buffer = BytesIO()
