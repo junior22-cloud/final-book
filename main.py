@@ -182,7 +182,7 @@ async def generate(topic: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
 
-@app.get("/pdf")
+@app.get("/api/pdf")
 async def generate_pdf(topic: str):
     """Generate and return PDF directly"""
     try:
