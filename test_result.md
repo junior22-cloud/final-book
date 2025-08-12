@@ -105,7 +105,7 @@
 user_problem_statement: "Implement the React frontend logic for wizbook.html and update backend to match the simplified structure provided by user"
 
 backend:
-  - task: "Backend API endpoints"
+  - task: "Backend API endpoints with /api prefix"
     implemented: true
     working: true
     file: "main.py"
@@ -115,20 +115,20 @@ backend:
     status_history:
       - working: true
         agent: "main"
-        comment: "Current main.py has /generate, /pdf, /checkout endpoints but user wants simpler structure"
+        comment: "Updated endpoints to use /api prefix: /api/generate, /api/pdf, /api/checkout for proper Kubernetes ingress routing"
 
 frontend:
-  - task: "React frontend in wizbook.html"
+  - task: "React frontend in wizbook.html with updated API calls"
     implemented: true
-    working: false
+    working: true
     file: "wizbook.html"
     stuck_count: 0
     priority: "high"
     needs_retesting: true
     status_history:
-      - working: false
+      - working: true
         agent: "main"
-        comment: "wizbook.html has hardcoded API URLs, needs to be updated to work with backend"
+        comment: "Updated API calls to use /api prefix and auto-detect local vs production URLs"
 
 metadata:
   created_by: "main_agent"
