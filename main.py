@@ -165,7 +165,7 @@ Format: Publication-ready markdown
 © 2024 BookWiz Generator - Professional AI-Powered Content"""
 
 # API Endpoints
-@app.get("/")
+@app.get("/api/")
 def root():
     return {"service": "BookWiz Generator", "status": "ready"}
 
