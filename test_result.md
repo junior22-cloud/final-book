@@ -146,4 +146,4 @@ test_plan:
 
 agent_communication:
   - agent: "main"
-    message: "User provided simplified backend code snippet. Need to understand if they want to replace current main.py or modify it. Current wizbook.html frontend needs API URL updates and testing."
+    message: "Updated backend endpoints to use /api prefix (/api/generate, /api/pdf, /api/checkout) and updated frontend API calls in wizbook.html to match. Also added auto-detection of local vs production URLs."
