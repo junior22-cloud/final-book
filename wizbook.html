@@ -371,7 +371,7 @@
 
       const handlePayment = async () => {
         try {
-          const response = await fetch(`${API_URL}/checkout?topic=${encodeURIComponent(formData.topic)}`);
+          const response = await fetch(`${API_URL}/api/checkout?topic=${encodeURIComponent(formData.topic)}`);
           const data = await response.json();
           
           if (data.checkout_url) {
