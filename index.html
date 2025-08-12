@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookWiz - AI Book Generator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .card { background: white; border-radius: 20px; padding: 40px; margin: 20px 0; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .hero { text-align: center; color: white; padding: 60px 20px; }
+        .hero h1 { font-size: 3.5em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .hero p { font-size: 1.2em; opacity: 0.9; }
+        .input-group { margin: 20px 0; }
+        .input-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        .input-group input, .input-group select { width: 100%; padding: 15px; border: 2px solid #e1e5e9; border-radius: 10px; font-size: 16px; }
+        .input-group input:focus, .input-group select:focus { border-color: #667eea; outline: none; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+        .btn { padding: 15px 30px; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; text-decoration: none; display: inline-block; text-align: center; }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3); }
+        .btn-success { background: linear-gradient(135deg, #11998e, #38ef7d); color: white; }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(17, 153, 142, 0.3); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .result { background: #f8f9fa; border-radius: 10px; padding: 25px; margin: 20px 0; border-left: 5px solid #667eea; }
+        .result pre { white-space: pre-wrap; font-size: 14px; line-height: 1.6; max-height: 400px; overflow-y: auto; }
+        .loading { display: none; text-align: center; padding: 40px; }
+        .loading.show { display: block; }
+        .spinner { border: 4px solid #f3f3f4; border-top: 4px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 30px 0; }
+        .feature { text-align: center; padding: 20px; }
+        .feature-icon { font-size: 3em; margin-bottom: 10px; }
+        .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 10px; margin: 10px 0; }
+        .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>📚 BookWiz</h1>
+        <p>AI-Powered Professional Book Generation</p>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2 style="text-align: center; margin-bottom: 30px; color: #333;">Generate Your Professional Book</h2>
+            
+            <div class="input-group">
+                <label for="topic">📖 Book Topic</label>
+                <input type="text" id="topic" placeholder="e.g., Python Programming, Digital Marketing, Coffee Shop Business" value="Python Programming">
+            </div>
+
+            <div class="input-group">
+                <label for="audience">👥 Target Audience</label>
+                <select id="audience">
+                    <option value="beginners">Complete Beginners</option>
+                    <option value="intermediate">Intermediate Level</option>
+                    <option value="advanced">Advanced Users</option>
+                    <option value="professionals">Business Professionals</option>
+                </select>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+                <button class="btn btn-primary" onclick="generateBook()" id="generateBtn">
+                    🚀 Generate Book ($9.99)
+                </button>
+            </div>
+
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">⚡</div>
+                    <h4>Instant Generation</h4>
+                    <p>Professional books in seconds</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">💎</div>
+                    <h4>Watermarked PDFs</h4>
+                    <p>Professional branding included</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🎯</div>
+                    <h4>High Quality</h4>
+                    <p>AI-powered, human-readable content</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <h3>🤖 AI is writing your book...</h3>
+            <p>This may take 10-30 seconds for quality content</p>
+        </div>
+
+        <div class="card" id="result" style="display: none;">
+            <h3 style="margin-bottom: 20px;">📄 Your Generated Book</h3>
+            <div style="margin-bottom: 20px;">
+                <button class="btn btn-success" onclick="downloadPDF()" id="downloadBtn">
+                    📱 Download PDF
+                </button>
+                <button class="btn btn-primary" onclick="generateAnother()" style="margin-left: 10px;">
+                    🔄 Generate Another
+                </button>
+            </div>
+            <div class="result" id="bookContent"></div>
+        </div>
+
+        <div id="messages"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://yourdomain.com'; // Replace with your actual domain
+        // For local testing: const API_URL = 'http://localhost:8000';
+        
+        let currentTopic = '';
+        let currentBookContent = '';
+
+        async function generateBook() {
+            const topic = document.getElementById('topic').value.trim();
+            const audience = document.getElementById('audience').value;
+            
+            if (!topic) {
+                showMessage('Please enter a book topic', 'error');
+                return;
+            }
+
+            currentTopic = topic;
+            
+            // Show loading
+            document.getElementById('generateBtn').disabled = true;
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('result').style.display = 'none';
+            clearMessages();
+
+            try {
+                // Generate the book
+                const response = await fetch(`${API_URL}/generate?topic=${encodeURIComponent(topic)} for ${audience}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Generation failed: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                currentBookContent = data.book;
+                
+                // Show result
+                document.getElementById('bookContent').innerHTML = `<pre>${data.book}</pre>`;
+                document.getElementById('result').style.display = 'block';
+                
+                showMessage(`✅ Book generated successfully! ${data.word_count} words created.`, 'success');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('❌ Generation failed. Please try again or check your internet connection.', 'error');
+            } finally {
+                // Hide loading
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('generateBtn').disabled = false;
+            }
+        }
+
+        async function downloadPDF() {
+            if (!currentTopic) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/pdf?topic=${encodeURIComponent(currentTopic)}`);
+                
+                if (!response.ok) {
+                    throw new Error('PDF generation failed');
+                }
+                
+                // Download the PDF
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${currentTopic.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                showMessage('📄 PDF downloaded successfully!', 'success');
+                
+            } catch (error) {
+                console.error('PDF Error:', error);
+                showMessage('❌ PDF download failed. Please try again.', 'error');
+            }
+        }
+
+        function generateAnother() {
+            document.getElementById('topic').focus();
+            document.getElementById('result').style.display = 'none';
+            clearMessages();
+        }
+
+        function showMessage(message, type) {
+            const messagesDiv = document.getElementById('messages');
+            const messageElement = document.createElement('div');
+            messageElement.className = type;
+            messageElement.textContent = message;
+            messagesDiv.appendChild(messageElement);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (messageElement.parentNode) {
+                    messageElement.parentNode.removeChild(messageElement);
+                }
+            }, 5000);
+        }
+
+        function clearMessages() {
+            document.getElementById('messages').innerHTML = '';
+        }
+
+        // Allow Enter key to generate
+        document.getElementById('topic').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                generateBook();
+            }
+        });
+
+        // Sample topics for inspiration
+        const sampleTopics = [
+            'Python Programming for Beginners',
+            'Digital Marketing Strategy', 
+            'Coffee Shop Business Plan',
+            'Cryptocurrency Investing Guide',
+            'Personal Finance Management',
+            'Web Development with React',
+            'Artificial Intelligence Basics',
+            'Content Creation for Social Media'
+        ];
+
+        // Add sample topic functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const topicInput = document.getElementById('topic');
+            topicInput.placeholder = sampleTopics[Math.floor(Math.random() * sampleTopics.length)];
+        });
+    </script>
+</body>
+</html>
