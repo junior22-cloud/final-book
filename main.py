@@ -172,7 +172,7 @@ def root():
 async def generate(topic: str):
     """Generate a book on any topic"""
     try:
-        book_content = generate_book(topic)
+        book_content = await generate_book(topic)
         return {
             "book": book_content,
             "topic": topic,
