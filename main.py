@@ -227,7 +227,7 @@ async def generate_pdf(topic: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
 
-@app.get("/checkout")  
+@app.get("/api/checkout")  
 async def create_checkout(topic: str = "General Book"):
     """Create Stripe checkout for book purchase"""
     try:
