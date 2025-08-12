@@ -2,6 +2,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
+from fastapi.staticfiles import StaticFiles
 import os
 from dotenv import load_dotenv
 import stripe
@@ -26,6 +27,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve static files (HTML frontend)
+app.mount("/", StaticFiles(directory="frontend/static", html=True), name="static")
 
 # Simple AI book generation function
 async def generate_book(topic: str) -> str:
