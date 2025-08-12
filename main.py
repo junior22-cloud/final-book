@@ -28,9 +28,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve static files (HTML frontend)
-app.mount("/", StaticFiles(directory="frontend/static", html=True), name="static")
-
 # Simple AI book generation function
 async def generate_book(topic: str) -> str:
     """Generate a professional book using available AI"""
