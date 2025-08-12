@@ -28,7 +28,7 @@ app.add_middleware(
 )
 
 # Simple AI book generation function
-def generate_book(topic: str) -> str:
+async def generate_book(topic: str) -> str:
     """Generate a professional book using available AI"""
     try:
         # Try emergent_llm if available in environment
@@ -46,7 +46,7 @@ def generate_book(topic: str) -> str:
                 system_message="You are an expert book author. Create comprehensive, valuable content."
             ).with_model("openai", "gpt-4o-mini")
             
-            response = chat.send_message(UserMessage(
+            response = await chat.send_message(UserMessage(
                 text=f"Write a professional book about {topic}. Include 6-8 chapters, practical examples, pro tips, and format in clean markdown."
             ))
             return response
