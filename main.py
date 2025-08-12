@@ -260,4 +260,13 @@ async def create_checkout(topic: str = "General Book"):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    
+    # Railway deployment optimization
+    if os.getenv("RAILWAY_ENVIRONMENT"):
+        HOST = "0.0.0.0"  # Forces public network for Railway
+        PORT = int(os.environ.get("PORT", 8000))
+    else:
+        HOST = "localhost"  # Local development
+        PORT = 8000
+    
+    uvicorn.run(app, host=HOST, port=PORT)
