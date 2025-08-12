@@ -146,4 +146,4 @@ test_plan:
 
 agent_communication:
   - agent: "main"
-    message: "Updated backend endpoints to use /api prefix (/api/generate, /api/pdf, /api/checkout) and updated frontend API calls in wizbook.html to match. Also added auto-detection of local vs production URLs."
+    message: "✅ DEPLOYMENT READY: Simplified architecture complete. Backend serves HTML directly via FastAPI StaticFiles. API endpoints: /api/generate, /api/pdf, /api/checkout. Frontend: /app/frontend/static/index.html with React app. Ready for Railway deployment."
