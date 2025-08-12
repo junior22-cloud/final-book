@@ -349,7 +349,7 @@
         if (!result) return;
 
         try {
-          const response = await fetch(`${API_URL}/pdf?topic=${encodeURIComponent(formData.topic)}`);
+          const response = await fetch(`${API_URL}/api/pdf?topic=${encodeURIComponent(formData.topic)}`);
           
           if (!response.ok) {
             throw new Error('PDF generation failed');
