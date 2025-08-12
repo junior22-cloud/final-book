@@ -328,7 +328,7 @@
         setError('');
 
         try {
-          const response = await fetch(`${API_URL}/generate?topic=${encodeURIComponent(formData.topic)} for ${formData.audience} in ${formData.style} style`);
+          const response = await fetch(`${API_URL}/api/generate?topic=${encodeURIComponent(formData.topic)} for ${formData.audience} in ${formData.style} style`);
           
           if (!response.ok) {
             throw new Error(`Generation failed: ${response.status}`);
