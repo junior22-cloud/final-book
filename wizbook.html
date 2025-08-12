@@ -313,9 +313,10 @@
       const [result, setResult] = useState(null);
       const [error, setError] = useState('');
 
-      // Change this to your Railway/deployed backend URL
-      const API_URL = 'https://your-railway-app.railway.app'; 
-      // For local development: const API_URL = 'http://localhost:8000';
+      // Auto-detect API URL based on environment
+      const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:8001'  // Local development (matches supervisor config)
+        : 'https://your-app-name.up.railway.app';  // Production (update with your Railway URL)
 
       const handleGenerate = async () => {
         if (!formData.topic.trim()) {
