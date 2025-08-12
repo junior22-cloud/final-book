@@ -24,10 +24,22 @@ Your files are ready:
 
 **In Railway Dashboard → Settings:**
 
-**Build Command:**
+**BUILD COMMAND (FIXED - No Yarn):**
 ```bash
-echo "Private networking not required for this app" && \
-rm -rf yarn.lock && pip install -r requirements.txt
+echo "Python-only deployment - no yarn needed" && \
+pip install --no-cache-dir -r requirements.txt
+```
+
+**Alternative Build Commands (If issues persist):**
+```bash
+# Option A: Simple
+pip install -r requirements.txt
+
+# Option B: Force clean  
+rm -rf __pycache__ .git yarn.lock package.json && pip install -r requirements.txt
+
+# Option C: Debug
+ls -la && pip install -r requirements.txt --verbose
 ```
 
 **Start Command:**
