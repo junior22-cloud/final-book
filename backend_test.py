@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 class AIBookGeneratorTester:
-    def __init__(self, base_url="https://ed0e24b7-92dc-464b-85c3-5e282ec65ef5.preview.emergentagent.com"):
+    def __init__(self, base_url="https://6c01608b-cf88-4ee1-bbbe-13267a9381af.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0
