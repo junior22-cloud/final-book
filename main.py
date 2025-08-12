@@ -168,7 +168,7 @@ Format: Publication-ready markdown
 def root():
     return {"service": "BookWiz Generator", "status": "ready"}
 
-@app.get("/generate")
+@app.get("/api/generate")
 async def generate(topic: str):
     """Generate a book on any topic"""
     try:
