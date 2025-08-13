@@ -313,10 +313,10 @@
       const [result, setResult] = useState(null);
       const [error, setError] = useState('');
 
-      // Auto-detect API URL - update YOUR-RAILWAY-APP with your actual Railway app name
+      // Auto-detect API URL - PRODUCTION READY
       const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
         ? 'http://localhost:8001'  // Local development
-        : 'https://YOUR-RAILWAY-APP.up.railway.app';  // Production - UPDATE THIS!
+        : 'https://wizbook.io';  // PRODUCTION DOMAIN - LIVE!
 
       const handleGenerate = async () => {
         if (!formData.topic.trim()) {
