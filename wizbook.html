@@ -303,7 +303,7 @@
     const { useState, useEffect } = React;
 
     function WizBookApp() {
-      const [step, setStep] = useState('home'); // home, generate, result
+      const [step, setStep] = useState('home');
       const [formData, setFormData] = useState({
         topic: '',
         audience: 'beginners',
@@ -313,10 +313,11 @@
       const [result, setResult] = useState(null);
       const [error, setError] = useState('');
 
-      // Auto-detect API URL based on environment
-      const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? 'http://localhost:8001'  // Local development (matches supervisor config)
-        : 'https://your-app-name.up.railway.app';  // Production (update with your Railway URL)
+      const API_URL = `${
+        window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+          ? 'http://localhost:8001' 
+          : 'https://wizbook.io'
+      }`.replace(/\/+$/, '') + '/';
 
       const handleGenerate = async () => {
         if (!formData.topic.trim()) {
@@ -328,7 +329,7 @@
         setError('');
 
         try {
-          const response = await fetch(`${API_URL}/api/generate?topic=${encodeURIComponent(formData.topic)} for ${formData.audience} in ${formData.style} style`);
+          const response = await fetch(`${API_URL}api/generate?topic=${encodeURIComponent(formData.topic)} for ${formData.audience} in ${formData.style} style`);
           
           if (!response.ok) {
             throw new Error(`Generation failed: ${response.status}`);
@@ -349,7 +350,7 @@
         if (!result) return;
 
         try {
-          const response = await fetch(`${API_URL}/api/pdf?topic=${encodeURIComponent(formData.topic)}`);
+          const response = await fetch(`${API_URL}api/pdf?topic=${encodeURIComponent(formData.topic)}`);
           
           if (!response.ok) {
             throw new Error('PDF generation failed');
@@ -371,7 +372,7 @@
 
       const handlePayment = async () => {
         try {
-          const response = await fetch(`${API_URL}/api/checkout?topic=${encodeURIComponent(formData.topic)}`);
+          const response = await fetch(`${API_URL}api/checkout?topic=${encodeURIComponent(formData.topic)}`);
           const data = await response.json();
           
           if (data.checkout_url) {
@@ -527,34 +528,4 @@
               </div>
             </div>
 
-            <div className="card" style={{textAlign: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)'}}>
-              <h3 style={{color: 'white', marginBottom: '20px'}}>🔥 Popular Topics</h3>
-              <div className="btn-grid">
-                {[
-                  'Python Programming for Beginners',
-                  'Digital Marketing Strategy', 
-                  'Personal Finance Guide',
-                  'Content Creation Tips',
-                  'Small Business Planning',
-                  'AI and Machine Learning'
-                ].map(topic => (
-                  <button 
-                    key={topic}
-                    className="btn btn-primary"
-                    onClick={() => setFormData({...formData, topic})}
-                    style={{fontSize: '0.95rem', padding: '12px 20px'}}
-                  >
-                    {topic}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </>
-      );
-    }
-
-    ReactDOM.render(<WizBookApp />, document.getElementById('root'));
-  </script>
-</body>
-</html>
+            <div className="card" style={{textAlign: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0
