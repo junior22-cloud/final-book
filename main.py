@@ -283,7 +283,7 @@ async def create_checkout(topic: str = "General Book", tier: str = "pro"):
         }
 
 # Serve static files (HTML frontend) - Mount after API routes
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
+app.mount("/", StaticFiles(directory="final-book/static", html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
