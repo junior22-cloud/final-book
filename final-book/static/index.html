@@ -585,18 +585,13 @@
     // Your handleCheckout function - works with current JSON backend
     async function handleCheckout(topic, tier) {
         try {
-            // Validate topic
             if (!topic || topic.trim() === '') {
                 alert('Please enter a book topic first!');
                 return;
             }
-
-            // Call your backend API
             const response = await fetch(`/api/checkout?topic=${encodeURIComponent(topic)}&tier=${encodeURIComponent(tier)}`);
             const data = await response.json();
-
             if (data.checkout_url) {
-                // Redirect user to the checkout page
                 window.location.href = data.checkout_url;
             } else {
                 alert('Checkout URL not found!');
