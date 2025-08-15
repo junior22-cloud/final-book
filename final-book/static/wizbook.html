@@ -311,8 +311,9 @@
     const { useState, useEffect } = React;
 
     function WizBookApp() {
-      const [step, setStep] = useState('home'); // home, pricing, generate, result
+      const [step, setStep] = useState('home'); // home, pricing, upsells, generate, result
       const [selectedTier, setSelectedTier] = useState('pro');
+      const [selectedUpsells, setSelectedUpsells] = useState([]);
       const [formData, setFormData] = useState({
         topic: '',
         audience: 'beginners',
@@ -341,6 +342,39 @@
           name: 'White Label', 
           delivery: 'Instant access',
           features: ['Everything in Pro', 'Remove branding', 'Commercial rights', '100 books/month license', '🚀 BUSINESS SOLUTION'] 
+        }
+      };
+
+      // Upsell Options
+      const upsells = {
+        formatting: {
+          id: 'formatting',
+          title: 'Professional Formatting',
+          price: 29.99,
+          originalPrice: 49.99,
+          description: 'Premium typography, margins, and layout design',
+          features: ['Custom typography', 'Professional margins', 'Chapter styling', 'Table of contents']
+        },
+        printReady: {
+          id: 'printReady',
+          title: 'Print-Ready PDF',
+          price: 49.00,
+          description: 'CMYK color profile + Print bleed setup + High-res graphics',
+          features: ['CMYK color profile', 'Print bleed margins', 'High-resolution graphics', 'Professional binding ready']
+        },
+        rushDelivery: {
+          id: 'rushDelivery', 
+          title: 'Rush Delivery',
+          price: 19.99,
+          description: '2-hour delivery instead of standard timing',
+          features: ['2-hour delivery', 'Priority processing', 'Instant notifications']
+        },
+        audioUpgrade: {
+          id: 'audioUpgrade',
+          title: 'Premium Audio',
+          price: 39.99,
+          description: 'Professional voice actor + Background music + Chapter breaks',
+          features: ['Professional voice actor', 'Background music', 'Chapter break sounds', 'Multiple voice options']
         }
       };
 
