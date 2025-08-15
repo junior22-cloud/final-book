@@ -232,22 +232,22 @@ async def generate_pdf(topic: str):
 async def create_checkout(topic: str = "General Book", tier: str = "pro"):
     """Create Stripe checkout session with tiered pricing"""
     try:
-        # Pricing tiers
+        # Premium Pricing Tiers
         pricing = {
             "basic": {
-                "price": 1497,  # $14.97
+                "price": 4700,  # $47.00
                 "name": "AI Book - Basic",
-                "description": "5-chapter AI book + PDF download"
+                "description": "AI-generated PDF + Standard cover + Watermarked footer + 24hr delivery"
             },
             "pro": {
-                "price": 2497,  # $24.97 (BEST VALUE)
-                "name": "AI Book - Professional",
-                "description": "8-chapter AI book + Premium PDF + Commercial Rights"
+                "price": 9700,  # $97.00 (BEST VALUE)
+                "name": "AI Book - Professional", 
+                "description": "Everything in Basic + Audio narration (AI) + Editable DOCX + 3 premium covers + 12hr delivery"
             },
-            "premium": {
-                "price": 4997,  # $49.97
-                "name": "AI Book - Premium",
-                "description": "12-chapter AI book + Premium PDF + Commercial Rights + 3 Bonus Templates"
+            "whitelabel": {
+                "price": 49700,  # $497.00
+                "name": "AI Book - White Label",
+                "description": "Everything in Pro + Remove branding + Commercial rights + 100 books/month license"
             }
         }
         
@@ -283,7 +283,7 @@ async def create_checkout(topic: str = "General Book", tier: str = "pro"):
         }
 
 # Serve static files (HTML frontend) - Mount after API routes
-app.mount("/", StaticFiles(directory="final-book/static", html=True), name="static")
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
