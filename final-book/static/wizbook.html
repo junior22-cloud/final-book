@@ -435,8 +435,12 @@
       };
 
       const handlePayment = async () => {
+        const totalUpsellPrice = selectedUpsells.reduce((sum, id) => sum + upsells[id].price, 0);
+        const finalPrice = pricingTiers[selectedTier].price + totalUpsellPrice;
+        
         try {
-          const response = await fetch(`${API_URL}/api/checkout?topic=${encodeURIComponent(formData.topic)}&tier=${selectedTier}`);
+          const upsellParams = selectedUpsells.length > 0 ? `&upsells=${selectedUpsells.join(',')}` : '';
+          const response = await fetch(`${API_URL}/api/checkout?topic=${encodeURIComponent(formData.topic)}&tier=${selectedTier}${upsellParams}`);
           const data = await response.json();
           
           if (data.checkout_url) {
@@ -451,6 +455,32 @@
 
       const handleGenerateClick = () => {
         setStep('pricing');
+      };
+
+      const handlePricingContinue = () => {
+        // Show upsells based on selected tier
+        if (selectedTier === 'basic' || selectedTier === 'pro') {
+          setStep('upsells');
+        } else {
+          handlePayment(); // Skip upsells for white label
+        }
+      };
+
+      const toggleUpsell = (upsellId) => {
+        setSelectedUpsells(prev => 
+          prev.includes(upsellId) 
+            ? prev.filter(id => id !== upsellId)
+            : [...prev, upsellId]
+        );
+      };
+
+      const getRecommendedUpsells = () => {
+        if (selectedTier === 'basic') {
+          return ['formatting', 'rushDelivery'];
+        } else if (selectedTier === 'pro') {
+          return ['printReady', 'audioUpgrade'];
+        }
+        return [];
       };
 
       if (loading) {
