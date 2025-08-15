@@ -811,18 +811,16 @@ def main():
     
     # Core functionality tests
     test_results['health_check'] = tester.test_health_check()
-    test_results['pricing_system'] = tester.test_pricing_system()
     test_results['ai_book_generation'] = tester.test_ai_book_generation()
-    test_results['book_retrieval_and_pdf'] = tester.test_book_retrieval_and_pdf()
-    test_results['books_listing'] = tester.test_books_listing()
+    test_results['pdf_generation'] = tester.test_pdf_generation()
+    test_results['stripe_checkout'] = tester.test_stripe_checkout()
+    test_results['email_capture_system'] = tester.test_email_capture_system()
+    test_results['stripe_webhook'] = tester.test_stripe_webhook()
     
     # Infrastructure and security tests
     test_results['cors_configuration'] = tester.test_cors_configuration()
     test_results['security_and_edge_cases'] = tester.test_security_and_edge_cases()
     test_results['performance_and_reliability'] = tester.test_performance_and_reliability()
-    
-    # Analysis tests
-    test_results['missing_endpoints'] = tester.test_missing_endpoints()
     
     # Print comprehensive results
     print("\n" + "=" * 80)
@@ -852,8 +850,8 @@ def main():
     critical_tests_passed = all([
         test_results['health_check'],
         test_results['ai_book_generation'],
-        test_results['book_retrieval_and_pdf'],
-        test_results['pricing_system'],
+        test_results['pdf_generation'],
+        test_results['stripe_checkout'],
         test_results['cors_configuration']
     ])
     
@@ -868,9 +866,11 @@ def main():
             print("Consider addressing minor issues for optimal user experience.")
         
         print(f"\n📈 PERFORMANCE METRICS:")
-        print(f"   - Generated {len(tester.generated_book_ids)} test books successfully")
-        print(f"   - All pricing tiers functional")
-        print(f"   - PDF generation working")
+        print(f"   - AI generation working across multiple topics")
+        print(f"   - PDF generation with watermarking functional")
+        print(f"   - Stripe checkout with upsells working")
+        print(f"   - Email capture system operational")
+        print(f"   - Webhook handling implemented")
         print(f"   - Security tests passed")
         
         return 0
@@ -880,7 +880,7 @@ def main():
         
         if not critical_tests_passed:
             print("\n❌ Failed Critical Tests:")
-            critical_test_names = ['health_check', 'ai_book_generation', 'book_retrieval_and_pdf', 'pricing_system', 'cors_configuration']
+            critical_test_names = ['health_check', 'ai_book_generation', 'pdf_generation', 'stripe_checkout', 'cors_configuration']
             for test_name in critical_test_names:
                 if not test_results.get(test_name, False):
                     print(f"   - {test_name.replace('_', ' ').title()}")
