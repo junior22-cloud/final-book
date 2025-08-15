@@ -1,5 +1,5 @@
 # Simplified BookWiz Backend - Production Ready
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
@@ -229,58 +229,175 @@ async def generate_pdf(topic: str):
         raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
 
 @app.get("/api/checkout")  
-async def create_checkout(topic: str = "General Book", tier: str = "pro"):
-    """Create Stripe checkout session with tiered pricing"""
+async def create_checkout(topic: str = "General Book", tier: str = "pro", upsells: str = ""):
+    """Create Stripe checkout session with pre-configured products and upsells"""
     try:
-        # Premium Pricing Tiers
-        pricing = {
+        # Pre-configured Stripe Products (from Stripe Dashboard)
+        stripe_products = {
             "basic": {
-                "price": 4700,  # $47.00
-                "name": "AI Book - Basic",
-                "description": "AI-generated PDF + Standard cover + Watermarked footer + 24hr delivery"
+                "price_id": "price_1OQk9X1...",  # Replace with your actual price ID
+                "product_id": "prod_PQk9X1...",  # Your Basic eBook product ID
+                "price": 47.00,
+                "name": "Basic eBook",
+                "description": "AI-generated PDF + Standard cover + Watermarked + 24hr delivery"
             },
             "pro": {
-                "price": 9700,  # $97.00 (BEST VALUE)
-                "name": "AI Book - Professional", 
-                "description": "Everything in Basic + Audio narration (AI) + Editable DOCX + 3 premium covers + 12hr delivery"
+                "price_id": "price_1OQk9X2...",  # Replace with your actual price ID  
+                "product_id": "prod_PQk9X2...",  # Your Pro Package product ID
+                "price": 97.00,
+                "name": "Pro Package",
+                "description": "Everything in Basic + Audio narration + Editable DOCX + 3 premium covers"
             },
             "whitelabel": {
-                "price": 49700,  # $497.00
-                "name": "AI Book - White Label",
-                "description": "Everything in Pro + Remove branding + Commercial rights + 100 books/month license"
+                "price_id": "price_1OQk9X3...",  # You'll need to create this one
+                "product_id": "prod_PQk9X3...",   # You'll need to create this one
+                "price": 497.00,
+                "name": "White Label License",
+                "description": "Everything in Pro + Remove branding + Commercial rights + 100 books/month"
+            }
+        }
+
+        # Upsell products
+        upsell_products = {
+            "formatting": {
+                "price": 2999,  # $29.99
+                "name": "Professional Formatting",
+                "description": "Premium typography, margins, and layout design"
+            },
+            "printReady": {
+                "price": 4900,  # $49.00
+                "name": "Print-Ready PDF",
+                "description": "CMYK color profile + Print bleed setup + High-res graphics"
+            },
+            "rushDelivery": {
+                "price": 1999,  # $19.99
+                "name": "Rush Delivery",
+                "description": "2-hour delivery instead of standard timing"
+            },
+            "audioUpgrade": {
+                "price": 3999,  # $39.99
+                "name": "Premium Audio",
+                "description": "Professional voice actor + Background music + Chapter breaks"
             }
         }
         
-        selected_tier = pricing.get(tier, pricing["pro"])
+        selected_product = stripe_products.get(tier, stripe_products["pro"])
         
+        # Build line items starting with main product
+        line_items = [{
+            'price': selected_product["price_id"],  # Use pre-configured price ID
+            'quantity': 1,
+        }]
+        
+        # Add upsells to line items
+        total_price = selected_product["price"]
+        if upsells:
+            selected_upsells = upsells.split(',')
+            for upsell_id in selected_upsells:
+                if upsell_id in upsell_products:
+                    upsell = upsell_products[upsell_id]
+                    # Create dynamic price for upsells
+                    line_items.append({
+                        'price_data': {
+                            'currency': 'usd',
+                            'product_data': {
+                                'name': upsell["name"],
+                                'description': upsell["description"]
+                            },
+                            'unit_amount': upsell["price"],
+                        },
+                        'quantity': 1,
+                    })
+                    total_price += upsell["price"] / 100
+
+        # Create checkout session with main product + upsells
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
-            line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {
-                        'name': f'{selected_tier["name"]}: {topic}',
-                        'description': selected_tier["description"]
-                    },
-                    'unit_amount': selected_tier["price"],
-                },
-                'quantity': 1,
-            }],
+            line_items=line_items,
             mode='payment',
-            success_url='https://wizbook.io/success?topic=' + topic,
-            cancel_url='https://wizbook.io/cancel',
+            success_url=f'https://wizbook.io/success?session_id={{CHECKOUT_SESSION_ID}}&topic={topic}&tier={tier}',
+            cancel_url=f'https://wizbook.io/cancel?topic={topic}',
+            metadata={
+                'topic': topic,
+                'tier': tier,
+                'upsells': upsells,
+                'product_name': selected_product["name"]
+            }
         )
         
-        return {"checkout_url": session.url, "tier": tier, "price": selected_tier["price"]/100}
+        return {
+            "checkout_url": session.url,
+            "session_id": session.id, 
+            "tier": tier,
+            "price": total_price,
+            "upsells": upsells.split(',') if upsells else [],
+            "product_id": selected_product["product_id"]
+        }
         
     except Exception as e:
-        # Demo mode fallback
+        # Demo mode fallback with your product structure
+        base_price = stripe_products.get(tier, stripe_products["pro"])["price"]
+        upsell_price = 0
+        if upsells:
+            selected_upsells = upsells.split(',')
+            for upsell_id in selected_upsells:
+                if upsell_id in upsell_products:
+                    upsell_price += upsell_products[upsell_id]["price"] / 100
+        
         return {
-            "checkout_url": f"https://wizbook.io/demo-success?topic={topic}&tier={tier}",
+            "checkout_url": f"https://wizbook.io/demo-success?topic={topic}&tier={tier}&upsells={upsells}",
             "message": "Demo mode - Add STRIPE_SECRET_KEY to process real payments",
             "tier": tier,
-            "price": selected_tier["price"]/100
+            "price": base_price + upsell_price,
+            "upsells": upsells.split(',') if upsells else [],
+            "demo": True
         }
+
+@app.post("/api/webhook")
+async def stripe_webhook(request: Request):
+    """Handle Stripe webhook events"""
+    try:
+        payload = await request.body()
+        sig_header = request.headers.get('stripe-signature')
+        endpoint_secret = os.environ.get('STRIPE_WEBHOOK_SECRET')
+        
+        if endpoint_secret:
+            event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
+        else:
+            # For demo purposes, parse the payload directly
+            import json
+            event = json.loads(payload)
+            
+        # Handle successful payment
+        if event['type'] == 'checkout.session.completed':
+            session = event['data']['object']
+            
+            # Extract metadata
+            topic = session.get('metadata', {}).get('topic', 'Unknown')
+            tier = session.get('metadata', {}).get('tier', 'basic')
+            upsells = session.get('metadata', {}).get('upsells', '')
+            customer_email = session.get('customer_details', {}).get('email', 'unknown@email.com')
+            amount_total = session.get('amount_total', 0) / 100  # Convert cents to dollars
+            
+            # Log successful purchase with upsells
+            upsell_list = upsells.split(',') if upsells else []
+            print(f"✅ SALE: {customer_email} bought {tier} plan for '{topic}'")
+            print(f"💰 Amount: ${amount_total}")
+            if upsell_list:
+                print(f"🚀 Upsells: {', '.join(upsell_list)}")
+            
+            # Here you would:
+            # 1. Generate the actual book based on tier + upsells
+            # 2. Apply upsell features (formatting, print-ready, rush delivery, etc.)
+            # 3. Send email with download links
+            # 4. Save to database with upsell details
+            # 5. Send to fulfillment system
+            
+        return {"status": "success"}
+        
+    except Exception as e:
+        print(f"Webhook error: {str(e)}")
+        return {"error": str(e)}, 400
 
 # Serve static files (HTML frontend) - Mount after API routes
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
