@@ -1,0 +1,16 @@
+# 🔐 WizBook.io API Keys Input File
+# Paste your real API keys below, then I'll process them securely
+# This file will be deleted after processing for security
+
+# 1. Get your EMERGENT_LLM_KEY from: Profile Icon → Universal Key
+# Should start with: sk-emergent-
+EMERGENT_LLM_KEY=PASTE_YOUR_EMERGENT_KEY_HERE
+
+# 2. Get your STRIPE_SECRET_KEY from: https://stripe.com → Developers → API Keys  
+# Should start with: sk_test_ (testing) or sk_live_ (production)
+STRIPE_SECRET_KEY=PASTE_YOUR_STRIPE_KEY_HERE
+
+# Instructions:
+# 1. Replace "PASTE_YOUR_EMERGENT_KEY_HERE" with your actual Emergent LLM key
+# 2. Replace "PASTE_YOUR_STRIPE_KEY_HERE" with your actual Stripe key
+# 3. Let me know when you're done - I'll process them and delete this file
