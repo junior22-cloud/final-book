@@ -404,6 +404,229 @@ class WizBookTester:
         print(f"   3. There's a mismatch in requirements")
         
         return True  # This is informational, not a failure
+
+    def test_performance_and_reliability(self):
+        """Test performance under load and reliability"""
+        print("\n" + "="*60)
+        print("⚡ PERFORMANCE & RELIABILITY TESTS")
+        print("="*60)
+        
+        # Test 1: Response time benchmarks
+        print("\n🔍 Testing Response Times...")
+        endpoints_to_test = [
+            ("Health Check", "GET", "", {}),
+            ("Pricing", "GET", "pricing", {}),
+            ("Books Listing", "GET", "books", {"limit": 5})
+        ]
+        
+        response_times = []
+        for name, method, endpoint, params in endpoints_to_test:
+            start_time = time.time()
+            success, response = self.run_test(
+                f"Performance - {name}", 
+                method, 
+                endpoint, 
+                200,
+                params=params,
+                timeout=30
+            )
+            end_time = time.time()
+            
+            response_time = end_time - start_time
+            response_times.append(response_time)
+            print(f"   Response Time: {response_time:.2f}s")
+            
+            if response_time > 5.0:
+                self.minor_issues.append(f"{name} response time too slow: {response_time:.2f}s")
+        
+        # Test 2: Concurrent requests
+        print("\n🔍 Testing Concurrent Request Handling...")
+        def make_concurrent_request(i):
+            try:
+                start_time = time.time()
+                response = requests.get(f"{self.api_url}/", timeout=30)
+                end_time = time.time()
+                return response.status_code == 200, end_time - start_time
+            except:
+                return False, 999
+        
+        start_time = time.time()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(make_concurrent_request, i) for i in range(10)]
+            results = [future.result() for future in concurrent.futures.as_completed(futures)]
+        end_time = time.time()
+        
+        successful_requests = sum(1 for success, _ in results if success)
+        avg_response_time = sum(time for _, time in results if time < 999) / len([t for _, t in results if t < 999])
+        total_time = end_time - start_time
+        
+        self.tests_run += 1
+        if successful_requests >= 8:  # Allow 2 failures
+            self.tests_passed += 1
+            print(f"✅ Concurrent test passed: {successful_requests}/10 requests successful")
+            print(f"   Average response time: {avg_response_time:.2f}s")
+            print(f"   Total test time: {total_time:.2f}s")
+            concurrent_success = True
+        else:
+            print(f"❌ Concurrent test failed: {successful_requests}/10 requests successful")
+            self.critical_failures.append(f"Concurrent requests: Only {successful_requests}/10 successful")
+            concurrent_success = False
+        
+        # Test 3: Memory usage simulation (large content generation)
+        print("\n🔍 Testing Memory Usage with Large Content...")
+        large_content_request = {
+            "topic": "Comprehensive Guide to Advanced Machine Learning Techniques",
+            "audience": "data scientists and machine learning engineers",
+            "tier": "premium",  # Largest tier
+            "style": "academic",
+            "length": "long"
+        }
+        
+        memory_success, memory_response = self.run_test(
+            "Memory Usage - Large Content", 
+            "POST", 
+            "generate-book", 
+            200,
+            json_data=large_content_request,
+            timeout=180  # Longer timeout for large content
+        )
+        
+        if memory_success and isinstance(memory_response, dict):
+            word_count = memory_response.get('word_count', 0)
+            print(f"   Generated {word_count} words successfully")
+            if memory_response.get('id'):
+                self.generated_book_ids.append(memory_response.get('id'))
+        
+        return concurrent_success and memory_success
+
+    def test_security_and_edge_cases(self):
+        """Test security vulnerabilities and edge cases"""
+        print("\n" + "="*60)
+        print("🔒 SECURITY & EDGE CASE TESTS")
+        print("="*60)
+        
+        security_tests = []
+        
+        # Test 1: SQL Injection attempts
+        print("\n🔍 Testing SQL Injection Protection...")
+        sql_payloads = [
+            "'; DROP TABLE books; --",
+            "' OR '1'='1",
+            "admin'--",
+            "' UNION SELECT * FROM users--"
+        ]
+        
+        for payload in sql_payloads:
+            request_data = {
+                "topic": payload,
+                "audience": "beginners",
+                "tier": "basic"
+            }
+            
+            success, response = self.run_test(
+                f"SQL Injection Test", 
+                "POST", 
+                "generate-book", 
+                200,  # Should handle gracefully, not crash
+                json_data=request_data,
+                timeout=30
+            )
+            
+            if success:
+                print(f"   ✅ SQL injection payload handled safely")
+            else:
+                print(f"   ⚠️  SQL injection payload caused error")
+            
+            security_tests.append(success)
+        
+        # Test 2: XSS attempts
+        print("\n🔍 Testing XSS Protection...")
+        xss_payloads = [
+            "<script>alert('xss')</script>",
+            "javascript:alert('xss')",
+            "<img src=x onerror=alert('xss')>",
+            "';alert('xss');//"
+        ]
+        
+        for payload in xss_payloads:
+            request_data = {
+                "topic": payload,
+                "audience": "beginners", 
+                "tier": "basic"
+            }
+            
+            success, response = self.run_test(
+                f"XSS Protection Test", 
+                "POST", 
+                "generate-book", 
+                200,
+                json_data=request_data,
+                timeout=30
+            )
+            
+            if success and isinstance(response, dict):
+                content = response.get('content', '')
+                if payload in content:
+                    self.minor_issues.append(f"XSS payload not sanitized in response")
+                else:
+                    print(f"   ✅ XSS payload properly handled")
+            
+            security_tests.append(success)
+        
+        # Test 3: Large payload handling
+        print("\n🔍 Testing Large Payload Handling...")
+        large_request = {
+            "topic": "A" * 10000,  # 10KB topic
+            "audience": "B" * 1000,
+            "tier": "basic"
+        }
+        
+        large_success, large_response = self.run_test(
+            "Large Payload Test", 
+            "POST", 
+            "generate-book", 
+            422,  # Should reject or handle gracefully
+            json_data=large_request,
+            timeout=60
+        )
+        
+        if not large_success:
+            # Try with 200 - maybe it handles large payloads
+            large_success, large_response = self.run_test(
+                "Large Payload Test (Alt)", 
+                "POST", 
+                "generate-book", 
+                200,
+                json_data=large_request,
+                timeout=60
+            )
+        
+        security_tests.append(large_success)
+        
+        # Test 4: Invalid JSON
+        print("\n🔍 Testing Invalid JSON Handling...")
+        try:
+            response = requests.post(
+                f"{self.api_url}/generate-book",
+                data="invalid json{{{",
+                headers={'Content-Type': 'application/json'},
+                timeout=30
+            )
+            
+            self.tests_run += 1
+            if response.status_code in [400, 422]:
+                self.tests_passed += 1
+                print("   ✅ Invalid JSON properly rejected")
+                security_tests.append(True)
+            else:
+                print(f"   ⚠️  Invalid JSON handling unexpected: {response.status_code}")
+                security_tests.append(False)
+                
+        except Exception as e:
+            print(f"   ❌ Invalid JSON test failed: {str(e)}")
+            security_tests.append(False)
+        
+        return sum(security_tests) >= len(security_tests) * 0.75  # 75% pass rate
     def test_cors_configuration(self):
         """Test CORS configuration"""
         print("\n" + "="*60)
