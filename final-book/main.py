@@ -294,6 +294,45 @@ async def create_checkout(topic: str = "General Book", tier: str = "pro"):
             "demo": True
         }
 
+@app.post("/api/webhook")
+async def stripe_webhook(request: Request):
+    """Handle Stripe webhook events"""
+    try:
+        payload = await request.body()
+        sig_header = request.headers.get('stripe-signature')
+        endpoint_secret = os.environ.get('STRIPE_WEBHOOK_SECRET')
+        
+        if endpoint_secret:
+            event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
+        else:
+            # For demo purposes, parse the payload directly
+            import json
+            event = json.loads(payload)
+            
+        # Handle successful payment
+        if event['type'] == 'checkout.session.completed':
+            session = event['data']['object']
+            
+            # Extract metadata
+            topic = session.get('metadata', {}).get('topic', 'Unknown')
+            tier = session.get('metadata', {}).get('tier', 'basic')
+            customer_email = session.get('customer_details', {}).get('email', 'unknown@email.com')
+            
+            # Log successful purchase (you can save to database here)
+            print(f"✅ SALE: {customer_email} bought {tier} plan for {topic}")
+            
+            # Here you would:
+            # 1. Generate the actual book
+            # 2. Send email with download links
+            # 3. Save to database
+            # 4. Send to fulfillment system
+            
+        return {"status": "success"}
+        
+    except Exception as e:
+        print(f"Webhook error: {str(e)}")
+        return {"error": str(e)}, 400
+
 # Serve static files (HTML frontend) - Mount after API routes
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
