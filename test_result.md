@@ -259,11 +259,14 @@ metadata:
 test_plan:
   current_focus:
     - "Complete React App with Urgency System"
-    - "API Endpoints - Core Functionality"
-    - "Email Capture System"
-    - "Stripe Payment Integration"
+    - "Email Capture Popup"
+    - "Countdown Timer System"
     - "Pricing & Upsell Flow"
-  stuck_tasks: []
+  stuck_tasks:
+    - "Complete React App with Urgency System"
+    - "Email Capture Popup"
+    - "Countdown Timer System"
+    - "Pricing & Upsell Flow"
   test_all: true
   test_priority: "critical_first"
 
