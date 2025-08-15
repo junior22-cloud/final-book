@@ -328,51 +328,98 @@ class WizBookTester:
         
         return all(checkout_results) and default_success and any(upsell_results)
 
-    def test_books_listing(self):
-        """Test GET /api/books - List recent books"""
+    def test_email_capture_system(self):
+        """Test POST /api/capture-email - Email capture system"""
         print("\n" + "="*60)
-        print("📋 BOOKS LISTING TESTS")
+        print("📧 EMAIL CAPTURE SYSTEM TESTS")
         print("="*60)
         
-        success, response = self.run_test(
-            "Books Listing", 
-            "GET", 
-            "books", 
-            200,
-            timeout=30
-        )
+        # Test 1: Valid email capture
+        valid_emails = [
+            {
+                "email": "test@wizbook.io",
+                "tier_interest": "pro",
+                "topic": "Python Programming"
+            },
+            {
+                "email": "user@example.com", 
+                "tier_interest": "basic",
+                "topic": "Digital Marketing"
+            },
+            {
+                "email": "premium@test.com",
+                "tier_interest": "whitelabel",
+                "topic": "Business Strategy"
+            }
+        ]
         
-        if success and isinstance(response, dict):
-            required_fields = ['books', 'count']
-            missing_fields = [field for field in required_fields if field not in response]
-            if missing_fields:
-                self.minor_issues.append(f"Books listing response missing fields: {missing_fields}")
-            else:
-                books = response.get('books', [])
-                count = response.get('count', 0)
-                print(f"   Total Books: {count}")
-                print(f"   Books Returned: {len(books)}")
-                
-                if count != len(books):
-                    self.minor_issues.append(f"Count mismatch: reported {count}, actual {len(books)}")
-                
-                # Test with limit parameter
-                print("\n🔍 Testing with limit parameter...")
-                limit_success, limit_response = self.run_test(
-                    "Books Listing - Limited", 
-                    "GET", 
-                    "books", 
-                    200,
-                    params={"limit": 5},
-                    timeout=30
-                )
-                
-                if limit_success and isinstance(limit_response, dict):
-                    limited_books = limit_response.get('books', [])
-                    if len(limited_books) > 5:
-                        self.minor_issues.append("Limit parameter not respected")
+        capture_results = []
+        for email_data in valid_emails:
+            print(f"\n🔍 Testing email capture for: {email_data['email']}")
+            success, response = self.run_test(
+                f"Email Capture - {email_data['email']}", 
+                "POST", 
+                "capture-email", 
+                200,
+                json_data=email_data,
+                timeout=30
+            )
+            
+            if success and isinstance(response, dict):
+                required_fields = ['status', 'message', 'email', 'sequence']
+                missing_fields = [field for field in required_fields if field not in response]
+                if missing_fields:
+                    self.minor_issues.append(f"Email capture response missing fields: {missing_fields}")
+                else:
+                    print(f"   Status: {response.get('status')}")
+                    print(f"   Message: {response.get('message')}")
+                    print(f"   Email: {response.get('email')}")
+                    print(f"   Sequence: {response.get('sequence')}")
+            
+            capture_results.append(success)
         
-        return success
+        # Test 2: Invalid email formats
+        print("\n🔍 Testing Invalid Email Formats...")
+        invalid_emails = [
+            {"email": "invalid-email", "tier_interest": "pro", "topic": "Test"},
+            {"email": "", "tier_interest": "basic", "topic": "Test"},
+            {"email": "no-at-symbol", "tier_interest": "pro", "topic": "Test"},
+            {"email": "@missing-local.com", "tier_interest": "basic", "topic": "Test"}
+        ]
+        
+        invalid_results = []
+        for email_data in invalid_emails:
+            success, response = self.run_test(
+                f"Invalid Email - {email_data['email']}", 
+                "POST", 
+                "capture-email", 
+                400,  # Expecting bad request
+                json_data=email_data,
+                timeout=30
+            )
+            invalid_results.append(success)
+        
+        # Test 3: Missing required fields
+        print("\n🔍 Testing Missing Required Fields...")
+        incomplete_data = [
+            {"tier_interest": "pro", "topic": "Test"},  # Missing email
+            {"email": "test@example.com"},  # Missing other fields
+            {}  # Empty request
+        ]
+        
+        incomplete_results = []
+        for data in incomplete_data:
+            success, response = self.run_test(
+                "Incomplete Email Capture", 
+                "POST", 
+                "capture-email", 
+                400,  # Expecting bad request
+                json_data=data,
+                timeout=30
+            )
+            incomplete_results.append(success)
+        
+        return all(capture_results) and any(invalid_results) and any(incomplete_results)
 
     def test_missing_endpoints(self):
         """Test for endpoints mentioned in review request but not implemented"""
