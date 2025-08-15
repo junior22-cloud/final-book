@@ -246,8 +246,8 @@ async def create_checkout(topic: str = "General Book"):
                 'quantity': 1,
             }],
             mode='payment',
-            success_url='https://yourdomain.com/success?topic=' + topic,
-            cancel_url='https://yourdomain.com/cancel',
+            success_url='https://wizbook.io/success?topic=' + topic,
+            cancel_url='https://wizbook.io/cancel',
         )
         return {"checkout_url": session.url, "session_id": session.id}
         
