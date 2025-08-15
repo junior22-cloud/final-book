@@ -705,8 +705,8 @@ class WizBookTester:
         print("\n🔍 Testing Response Times...")
         endpoints_to_test = [
             ("Health Check", "GET", "", {}),
-            ("Pricing", "GET", "pricing", {}),
-            ("Books Listing", "GET", "books", {"limit": 5})
+            ("AI Generation", "GET", "generate", {"topic": "Test Topic"}),
+            ("Checkout", "GET", "checkout", {"topic": "Test Topic"})
         ]
         
         response_times = []
@@ -726,7 +726,7 @@ class WizBookTester:
             response_times.append(response_time)
             print(f"   Response Time: {response_time:.2f}s")
             
-            if response_time > 5.0:
+            if response_time > 10.0:  # More lenient for AI generation
                 self.minor_issues.append(f"{name} response time too slow: {response_time:.2f}s")
         
         # Test 2: Concurrent requests
@@ -764,30 +764,39 @@ class WizBookTester:
         
         # Test 3: Memory usage simulation (large content generation)
         print("\n🔍 Testing Memory Usage with Large Content...")
-        large_content_request = {
-            "topic": "Comprehensive Guide to Advanced Machine Learning Techniques",
-            "audience": "data scientists and machine learning engineers",
-            "tier": "premium",  # Largest tier
-            "style": "academic",
-            "length": "long"
-        }
-        
         memory_success, memory_response = self.run_test(
             "Memory Usage - Large Content", 
-            "POST", 
-            "generate-book", 
+            "GET", 
+            "generate", 
             200,
-            json_data=large_content_request,
+            params={"topic": "Comprehensive Guide to Advanced Machine Learning Techniques and Deep Neural Networks with Practical Applications"},
             timeout=180  # Longer timeout for large content
         )
         
         if memory_success and isinstance(memory_response, dict):
             word_count = memory_response.get('word_count', 0)
             print(f"   Generated {word_count} words successfully")
-            if memory_response.get('id'):
-                self.generated_book_ids.append(memory_response.get('id'))
         
-        return concurrent_success and memory_success
+        # Test 4: PDF generation performance
+        print("\n🔍 Testing PDF Generation Performance...")
+        pdf_start_time = time.time()
+        pdf_success, pdf_response = self.run_test(
+            "PDF Performance Test", 
+            "GET", 
+            "pdf", 
+            200,
+            params={"topic": "Performance Test Topic"},
+            timeout=120
+        )
+        pdf_end_time = time.time()
+        
+        if pdf_success:
+            pdf_time = pdf_end_time - pdf_start_time
+            print(f"   PDF Generation Time: {pdf_time:.2f}s")
+            if pdf_time > 30.0:
+                self.minor_issues.append(f"PDF generation too slow: {pdf_time:.2f}s")
+        
+        return concurrent_success and memory_success and pdf_success
 
 def main():
     print("🚀 GOD MODE BACKEND AUDIT - COMPREHENSIVE TESTING")
