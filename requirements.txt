@@ -1,8 +1,9 @@
 # Railway-Optimized Requirements
 fastapi==0.110.1
-uvicorn==0.25.0
+uvicorn==0.25.0  
 python-dotenv>=1.0.1
 emergentintegrations
 python-multipart>=0.0.9
 reportlab>=4.0.0
 stripe>=5.0.0
+uuid
