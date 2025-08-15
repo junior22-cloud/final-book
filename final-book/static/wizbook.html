@@ -549,14 +549,20 @@
                 <button 
                   className="btn btn-primary" 
                   onClick={handlePayment}
-                  style={{fontSize: '1.2rem', padding: '20px 50px', marginRight: '15px'}}
+                  style={{
+                    fontSize: '1.3rem', 
+                    padding: '25px 60px', 
+                    marginRight: '20px',
+                    background: selectedTier === 'whitelabel' ? 'linear-gradient(135deg, #dc2626, #b91c1c)' : 'linear-gradient(135deg, #667eea, #764ba2)',
+                    boxShadow: '0 8px 25px rgba(102, 126, 234, 0.4)'
+                  }}
                 >
-                  🚀 Get My Book - ${pricingTiers[selectedTier].price}
+                  {selectedTier === 'whitelabel' ? '🚀 Start Business License' : '💎 Get Premium Book'} - ${pricingTiers[selectedTier].price}
                 </button>
                 <button 
                   className="btn" 
                   onClick={() => setStep('home')}
-                  style={{fontSize: '1rem', padding: '15px 30px', background: '#f3f4f6', color: '#374151'}}
+                  style={{fontSize: '1rem', padding: '20px 35px', background: '#f3f4f6', color: '#374151'}}
                 >
                   ← Back
                 </button>
