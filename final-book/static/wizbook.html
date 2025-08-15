@@ -477,7 +477,7 @@
                 Topic: <strong>{formData.topic}</strong>
               </p>
 
-              <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '25px', marginBottom: '30px'}}>
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px', marginBottom: '30px'}}>
                 {Object.entries(pricingTiers).map(([tier, info]) => (
                   <div
                     key={tier}
@@ -485,11 +485,12 @@
                     style={{
                       border: selectedTier === tier ? '3px solid #667eea' : '2px solid #e5e7eb',
                       borderRadius: '16px',
-                      padding: '25px',
+                      padding: '30px',
                       cursor: 'pointer',
                       background: selectedTier === tier ? 'rgba(102, 126, 234, 0.05)' : 'white',
                       transition: 'all 0.3s ease',
-                      position: 'relative'
+                      position: 'relative',
+                      minHeight: '400px'
                     }}
                   >
                     {tier === 'pro' && (
@@ -504,23 +505,39 @@
                         fontSize: '0.8rem',
                         fontWeight: 'bold'
                       }}>
-                        BEST VALUE
+                        MOST POPULAR
                       </div>
                     )}
                     
-                    <h3 style={{fontSize: '1.5rem', marginBottom: '10px', color: '#1f2937'}}>{info.name}</h3>
-                    <div style={{fontSize: '2.5rem', fontWeight: 'bold', color: '#667eea', marginBottom: '15px'}}>
+                    {tier === 'whitelabel' && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '-10px',
+                        right: '20px',
+                        background: '#dc2626',
+                        color: 'white',
+                        padding: '5px 15px',
+                        borderRadius: '20px',
+                        fontSize: '0.8rem',
+                        fontWeight: 'bold'
+                      }}>
+                        BUSINESS
+                      </div>
+                    )}
+                    
+                    <h3 style={{fontSize: '1.8rem', marginBottom: '10px', color: '#1f2937', textTransform: 'uppercase'}}>{info.name}</h3>
+                    <div style={{fontSize: '3rem', fontWeight: 'bold', color: '#667eea', marginBottom: '10px'}}>
                       ${info.price}
                     </div>
-                    <div style={{marginBottom: '20px', color: '#6b7280'}}>
-                      {info.chapters} Professional Chapters
+                    <div style={{marginBottom: '25px', color: '#6b7280', fontWeight: '500'}}>
+                      {info.delivery}
                     </div>
                     
                     <ul style={{listStyle: 'none', padding: 0}}>
                       {info.features.map((feature, index) => (
-                        <li key={index} style={{padding: '8px 0', color: '#374151', display: 'flex', alignItems: 'center'}}>
-                          <span style={{color: '#10b981', marginRight: '10px'}}>✓</span>
-                          {feature}
+                        <li key={index} style={{padding: '10px 0', color: '#374151', display: 'flex', alignItems: 'flex-start'}}>
+                          <span style={{color: '#10b981', marginRight: '12px', marginTop: '2px', fontSize: '1.2rem'}}>✓</span>
+                          <span style={{lineHeight: '1.5'}}>{feature}</span>
                         </li>
                       ))}
                     </ul>
