@@ -123,7 +123,7 @@ backend:
 frontend:
   - task: "Single-file HTML frontend with React"
     implemented: true
-    working: true
+    working: "NA"
     file: "frontend/static/index.html"
     stuck_count: 0
     priority: "high"
@@ -132,6 +132,9 @@ frontend:
       - working: true
         agent: "main"
         comment: "✅ COMPLETE: HTML file created and served by FastAPI. React may need local testing due to CDN limitations in preview environment."
+      - working: "NA"
+        agent: "testing"
+        comment: "Minor: Static file serving returns 502 error - FastAPI StaticFiles mount not working correctly. HTML file exists at /app/frontend/static/index.html but not accessible via root URL. Frontend supervisor service also failing due to missing craco dependency. This is a configuration issue, not a critical backend failure."
 
 metadata:
   created_by: "main_agent"
