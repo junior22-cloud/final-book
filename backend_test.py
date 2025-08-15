@@ -1,182 +1,454 @@
 import requests
 import sys
 import json
+import time
+import concurrent.futures
 from datetime import datetime
 
-class AIBookGeneratorTester:
+class WizBookTester:
     def __init__(self, base_url="https://6c01608b-cf88-4ee1-bbbe-13267a9381af.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0
         self.tests_passed = 0
-        self.generated_book_id = None
+        self.critical_failures = []
+        self.minor_issues = []
 
-    def run_test(self, name, method, endpoint, expected_status, data=None, timeout=60):
+    def run_test(self, name, method, endpoint, expected_status, params=None, timeout=60):
         """Run a single API test"""
-        url = f"{self.api_url}/{endpoint}" if not endpoint.startswith('http') else endpoint
-        headers = {'Content-Type': 'application/json'}
-
+        if endpoint.startswith('http'):
+            url = endpoint
+        else:
+            url = f"{self.api_url}/{endpoint}" if endpoint else self.api_url
+        
         self.tests_run += 1
         print(f"\n🔍 Testing {name}...")
         print(f"   URL: {url}")
         
         try:
             if method == 'GET':
-                response = requests.get(url, headers=headers, timeout=timeout)
+                response = requests.get(url, params=params, timeout=timeout)
             elif method == 'POST':
-                response = requests.post(url, json=data, headers=headers, timeout=timeout)
+                response = requests.post(url, json=params, timeout=timeout)
 
             success = response.status_code == expected_status
             if success:
                 self.tests_passed += 1
                 print(f"✅ Passed - Status: {response.status_code}")
                 try:
-                    response_data = response.json()
-                    print(f"   Response keys: {list(response_data.keys()) if isinstance(response_data, dict) else 'Non-dict response'}")
-                    return True, response_data
+                    if 'application/json' in response.headers.get('content-type', ''):
+                        response_data = response.json()
+                        print(f"   Response keys: {list(response_data.keys()) if isinstance(response_data, dict) else 'Non-dict response'}")
+                        return True, response_data
+                    else:
+                        print(f"   Content-Type: {response.headers.get('content-type', 'unknown')}")
+                        print(f"   Content-Length: {len(response.content)} bytes")
+                        return True, response.content
                 except:
                     return True, response.text
             else:
-                print(f"❌ Failed - Expected {expected_status}, got {response.status_code}")
+                error_msg = f"Expected {expected_status}, got {response.status_code}"
+                print(f"❌ Failed - {error_msg}")
                 print(f"   Response: {response.text[:200]}...")
+                self.critical_failures.append(f"{name}: {error_msg}")
                 return False, {}
 
         except requests.exceptions.Timeout:
-            print(f"❌ Failed - Request timed out after {timeout} seconds")
+            error_msg = f"Request timed out after {timeout} seconds"
+            print(f"❌ Failed - {error_msg}")
+            self.critical_failures.append(f"{name}: {error_msg}")
             return False, {}
         except Exception as e:
-            print(f"❌ Failed - Error: {str(e)}")
+            error_msg = f"Error: {str(e)}"
+            print(f"❌ Failed - {error_msg}")
+            self.critical_failures.append(f"{name}: {error_msg}")
             return False, {}
 
-    def test_root_endpoint(self):
-        """Test the root API endpoint"""
-        return self.run_test("Root API Endpoint", "GET", "", 200)
-
-    def test_pricing_endpoint(self):
-        """Test pricing tiers endpoint"""
-        success, response = self.run_test("Pricing Endpoint", "GET", "pricing", 200)
+    def test_health_check(self):
+        """Test GET /api/ - Health check"""
+        print("\n" + "="*60)
+        print("🏥 HEALTH CHECK TESTS")
+        print("="*60)
+        
+        success, response = self.run_test("Health Check", "GET", "", 200)
         if success and isinstance(response, dict):
-            tiers = response.get('tiers', [])
-            print(f"   Found {len(tiers)} pricing tiers")
-            for tier in tiers:
-                print(f"   - {tier.get('name', 'Unknown')}: ${tier.get('price', 'N/A')}")
+            if 'service' in response and 'status' in response:
+                print(f"   Service: {response.get('service')}")
+                print(f"   Status: {response.get('status')}")
+            else:
+                self.minor_issues.append("Health check missing expected fields")
         return success
 
-    def test_book_generation(self):
-        """Test book generation endpoint"""
-        book_data = {
-            "topic": "Python Programming",
-            "audience": "complete beginners", 
-            "style": "casual",
-            "length": "medium",
-            "tier": "pro",
-            "email": "test@example.com"
-        }
+    def test_ai_generation(self):
+        """Test GET /api/generate?topic=Python Programming - AI book generation"""
+        print("\n" + "="*60)
+        print("🤖 AI GENERATION TESTS")
+        print("="*60)
+        
+        # Test with valid topic
+        success, response = self.run_test(
+            "AI Book Generation - Python Programming", 
+            "GET", 
+            "generate", 
+            200,
+            params={"topic": "Python Programming"},
+            timeout=120
+        )
+        
+        if success and isinstance(response, dict):
+            required_fields = ['book', 'topic', 'word_count', 'status']
+            missing_fields = [field for field in required_fields if field not in response]
+            if missing_fields:
+                self.minor_issues.append(f"Generation response missing fields: {missing_fields}")
+            else:
+                print(f"   Topic: {response.get('topic')}")
+                print(f"   Word Count: {response.get('word_count')}")
+                print(f"   Status: {response.get('status')}")
+                print(f"   Content Preview: {response.get('book', '')[:100]}...")
+        
+        # Test error handling - missing topic
+        print("\n🔍 Testing Error Handling - Missing Topic...")
+        error_success, error_response = self.run_test(
+            "AI Generation - Missing Topic", 
+            "GET", 
+            "generate", 
+            422,  # Expecting validation error
+            timeout=30
+        )
+        
+        if not error_success:
+            # If 422 failed, try 400 or 500
+            error_success, error_response = self.run_test(
+                "AI Generation - Missing Topic (Alt)", 
+                "GET", 
+                "generate", 
+                400,
+                timeout=30
+            )
+        
+        return success
+
+    def test_pdf_generation(self):
+        """Test GET /api/pdf?topic=Python Programming - PDF generation with watermark"""
+        print("\n" + "="*60)
+        print("📄 PDF GENERATION TESTS")
+        print("="*60)
         
         success, response = self.run_test(
-            "Book Generation", 
-            "POST", 
-            "generate-book", 
-            200, 
-            data=book_data,
-            timeout=120  # Longer timeout for AI generation
+            "PDF Generation - Python Programming", 
+            "GET", 
+            "pdf", 
+            200,
+            params={"topic": "Python Programming"},
+            timeout=120
         )
         
-        if success and isinstance(response, dict):
-            self.generated_book_id = response.get('id')
-            print(f"   Generated book ID: {self.generated_book_id}")
-            print(f"   Word count: {response.get('word_count', 'N/A')}")
-            print(f"   Status: {response.get('status', 'N/A')}")
-            print(f"   Content preview: {response.get('content', '')[:100]}...")
+        if success:
+            if isinstance(response, bytes) and len(response) > 1000:
+                print(f"   PDF Size: {len(response)} bytes")
+                # Check if it's actually a PDF
+                if response[:4] == b'%PDF':
+                    print("   ✅ Valid PDF format detected")
+                else:
+                    self.minor_issues.append("PDF response doesn't start with PDF header")
+            else:
+                self.critical_failures.append("PDF Generation: Invalid or empty PDF response")
+                success = False
+        
+        # Test error handling
+        print("\n🔍 Testing PDF Error Handling - Missing Topic...")
+        error_success, error_response = self.run_test(
+            "PDF Generation - Missing Topic", 
+            "GET", 
+            "pdf", 
+            422,
+            timeout=30
+        )
+        
+        if not error_success:
+            error_success, error_response = self.run_test(
+                "PDF Generation - Missing Topic (Alt)", 
+                "GET", 
+                "pdf", 
+                400,
+                timeout=30
+            )
         
         return success
 
-    def test_get_book(self):
-        """Test retrieving a generated book"""
-        if not self.generated_book_id:
-            print("❌ Skipping - No book ID available from generation test")
-            return False
-            
-        return self.run_test(
-            "Get Book by ID", 
-            "GET", 
-            f"book/{self.generated_book_id}", 
-            200
-        )
-
-    def test_pdf_download(self):
-        """Test PDF download endpoint"""
-        if not self.generated_book_id:
-            print("❌ Skipping - No book ID available from generation test")
-            return False
-            
-        url = f"{self.api_url}/book/{self.generated_book_id}/pdf"
-        print(f"\n🔍 Testing PDF Download...")
-        print(f"   URL: {url}")
+    def test_stripe_checkout(self):
+        """Test GET /api/checkout?topic=Python Programming - Stripe payment flow"""
+        print("\n" + "="*60)
+        print("💳 STRIPE CHECKOUT TESTS")
+        print("="*60)
         
-        try:
-            response = requests.get(url, timeout=60)
-            self.tests_run += 1
-            
-            if response.status_code == 200:
-                content_type = response.headers.get('content-type', '')
-                content_length = len(response.content)
-                
-                if 'application/pdf' in content_type and content_length > 1000:
-                    self.tests_passed += 1
-                    print(f"✅ Passed - PDF generated successfully")
-                    print(f"   Content-Type: {content_type}")
-                    print(f"   Size: {content_length} bytes")
-                    return True
-                else:
-                    print(f"❌ Failed - Invalid PDF response")
-                    print(f"   Content-Type: {content_type}")
-                    print(f"   Size: {content_length} bytes")
-                    return False
+        success, response = self.run_test(
+            "Stripe Checkout - Python Programming", 
+            "GET", 
+            "checkout", 
+            200,
+            params={"topic": "Python Programming"},
+            timeout=60
+        )
+        
+        if success and isinstance(response, dict):
+            required_fields = ['checkout_url', 'session_id']
+            missing_fields = [field for field in required_fields if field not in response]
+            if missing_fields:
+                self.minor_issues.append(f"Checkout response missing fields: {missing_fields}")
             else:
-                print(f"❌ Failed - Status: {response.status_code}")
-                print(f"   Response: {response.text[:200]}...")
+                print(f"   Checkout URL: {response.get('checkout_url')}")
+                print(f"   Session ID: {response.get('session_id')}")
+                if response.get('demo'):
+                    print("   ⚠️  Demo mode detected (Stripe keys not configured)")
+                    self.minor_issues.append("Stripe running in demo mode")
+        
+        # Test default topic
+        print("\n🔍 Testing Default Topic...")
+        default_success, default_response = self.run_test(
+            "Stripe Checkout - Default Topic", 
+            "GET", 
+            "checkout", 
+            200,
+            timeout=30
+        )
+        
+        return success
+
+    def test_cors_configuration(self):
+        """Test CORS configuration"""
+        print("\n" + "="*60)
+        print("🌐 CORS CONFIGURATION TESTS")
+        print("="*60)
+        
+        # Test preflight request
+        try:
+            response = requests.options(f"{self.api_url}/", headers={
+                'Origin': 'https://wizbook.io',
+                'Access-Control-Request-Method': 'GET',
+                'Access-Control-Request-Headers': 'Content-Type'
+            }, timeout=30)
+            
+            self.tests_run += 1
+            cors_headers = {
+                'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers')
+            }
+            
+            print(f"   CORS Headers: {cors_headers}")
+            
+            if cors_headers['Access-Control-Allow-Origin']:
+                self.tests_passed += 1
+                print("✅ CORS configured")
+                return True
+            else:
+                print("❌ CORS not properly configured")
+                self.critical_failures.append("CORS: Missing Access-Control-Allow-Origin header")
                 return False
                 
         except Exception as e:
-            print(f"❌ Failed - Error: {str(e)}")
+            print(f"❌ CORS test failed: {str(e)}")
+            self.critical_failures.append(f"CORS: {str(e)}")
             return False
 
-    def test_list_books(self):
-        """Test listing books endpoint"""
-        return self.run_test("List Books", "GET", "books", 200)
+    def test_static_file_serving(self):
+        """Test static file serving - HTML frontend at root /"""
+        print("\n" + "="*60)
+        print("📁 STATIC FILE SERVING TESTS")
+        print("="*60)
+        
+        success, response = self.run_test(
+            "Static HTML Frontend", 
+            "GET", 
+            self.base_url,  # Root URL
+            200,
+            timeout=30
+        )
+        
+        if success:
+            if isinstance(response, (str, bytes)):
+                content = response if isinstance(response, str) else response.decode('utf-8', errors='ignore')
+                if 'WizBook.io' in content and 'html' in content.lower():
+                    print("   ✅ HTML frontend detected")
+                else:
+                    self.minor_issues.append("Static serving: HTML content doesn't contain expected elements")
+            else:
+                self.critical_failures.append("Static serving: Invalid response type")
+                success = False
+        
+        return success
+
+    def test_environment_variables(self):
+        """Test behavior with different environment variable configurations"""
+        print("\n" + "="*60)
+        print("🔧 ENVIRONMENT VARIABLE TESTS")
+        print("="*60)
+        
+        # Test AI generation (should work with or without EMERGENT_LLM_KEY)
+        print("🔍 Testing AI fallback mechanisms...")
+        success, response = self.run_test(
+            "AI Fallback Test", 
+            "GET", 
+            "generate", 
+            200,
+            params={"topic": "Test Topic"},
+            timeout=90
+        )
+        
+        if success:
+            print("   ✅ AI generation working (fallback mechanisms functional)")
+        
+        # Test Stripe (should work in demo mode without keys)
+        print("\n🔍 Testing Stripe demo mode...")
+        stripe_success, stripe_response = self.run_test(
+            "Stripe Demo Mode Test", 
+            "GET", 
+            "checkout", 
+            200,
+            params={"topic": "Test Topic"},
+            timeout=30
+        )
+        
+        if stripe_success and isinstance(stripe_response, dict):
+            if stripe_response.get('demo'):
+                print("   ✅ Stripe demo mode working")
+            else:
+                print("   ✅ Stripe live mode working")
+        
+        return success and stripe_success
+
+    def test_load_testing(self):
+        """Test multiple concurrent requests"""
+        print("\n" + "="*60)
+        print("⚡ LOAD TESTING")
+        print("="*60)
+        
+        def make_request(i):
+            try:
+                response = requests.get(f"{self.api_url}/", timeout=30)
+                return response.status_code == 200
+            except:
+                return False
+        
+        print("🔍 Testing 5 concurrent health check requests...")
+        start_time = time.time()
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            futures = [executor.submit(make_request, i) for i in range(5)]
+            results = [future.result() for future in concurrent.futures.as_completed(futures)]
+        
+        end_time = time.time()
+        success_count = sum(results)
+        
+        self.tests_run += 1
+        if success_count >= 4:  # Allow 1 failure
+            self.tests_passed += 1
+            print(f"✅ Load test passed: {success_count}/5 requests successful")
+            print(f"   Total time: {end_time - start_time:.2f} seconds")
+            return True
+        else:
+            print(f"❌ Load test failed: {success_count}/5 requests successful")
+            self.critical_failures.append(f"Load test: Only {success_count}/5 requests successful")
+            return False
+
+    def test_edge_cases(self):
+        """Test edge cases and error conditions"""
+        print("\n" + "="*60)
+        print("🧪 EDGE CASE TESTS")
+        print("="*60)
+        
+        edge_cases = [
+            ("Very Long Topic", "generate", {"topic": "A" * 1000}),
+            ("Special Characters Topic", "generate", {"topic": "Python & AI: Machine Learning with 100% Success!"}),
+            ("Empty Topic", "generate", {"topic": ""}),
+            ("Unicode Topic", "generate", {"topic": "机器学习与人工智能"}),
+        ]
+        
+        passed_edge_cases = 0
+        for name, endpoint, params in edge_cases:
+            print(f"\n🔍 Testing {name}...")
+            try:
+                response = requests.get(f"{self.api_url}/{endpoint}", params=params, timeout=60)
+                self.tests_run += 1
+                
+                if response.status_code in [200, 400, 422]:  # Accept success or proper error
+                    passed_edge_cases += 1
+                    self.tests_passed += 1
+                    print(f"   ✅ Handled properly (Status: {response.status_code})")
+                else:
+                    print(f"   ❌ Unexpected status: {response.status_code}")
+                    
+            except Exception as e:
+                print(f"   ❌ Exception: {str(e)}")
+                self.tests_run += 1
+        
+        return passed_edge_cases >= len(edge_cases) * 0.75  # 75% success rate
 
 def main():
-    print("🚀 Starting AI Book Generator API Tests")
-    print("=" * 50)
+    print("🚀 COMPREHENSIVE PRE-LAUNCH BUG AUDIT for WizBook.io")
+    print("=" * 80)
+    print("Testing all critical endpoints and functionality before production deployment")
+    print("=" * 80)
     
-    tester = AIBookGeneratorTester()
+    tester = WizBookTester()
     
-    # Run all tests
-    tests = [
-        tester.test_root_endpoint,
-        tester.test_pricing_endpoint,
-        tester.test_book_generation,
-        tester.test_get_book,
-        tester.test_pdf_download,
-        tester.test_list_books
-    ]
+    # Run all comprehensive tests
+    test_results = {}
     
-    for test in tests:
-        try:
-            test()
-        except Exception as e:
-            print(f"❌ Test failed with exception: {str(e)}")
+    test_results['health_check'] = tester.test_health_check()
+    test_results['ai_generation'] = tester.test_ai_generation()
+    test_results['pdf_generation'] = tester.test_pdf_generation()
+    test_results['stripe_checkout'] = tester.test_stripe_checkout()
+    test_results['cors_config'] = tester.test_cors_configuration()
+    test_results['static_serving'] = tester.test_static_file_serving()
+    test_results['env_variables'] = tester.test_environment_variables()
+    test_results['load_testing'] = tester.test_load_testing()
+    test_results['edge_cases'] = tester.test_edge_cases()
     
-    # Print final results
-    print("\n" + "=" * 50)
-    print(f"📊 Test Results: {tester.tests_passed}/{tester.tests_run} tests passed")
+    # Print comprehensive results
+    print("\n" + "=" * 80)
+    print("📊 COMPREHENSIVE TEST RESULTS")
+    print("=" * 80)
     
-    if tester.tests_passed == tester.tests_run:
-        print("🎉 All tests passed!")
+    print(f"Total Tests Run: {tester.tests_run}")
+    print(f"Tests Passed: {tester.tests_passed}")
+    print(f"Success Rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
+    
+    print("\n🎯 TEST CATEGORY RESULTS:")
+    for test_name, result in test_results.items():
+        status = "✅ PASS" if result else "❌ FAIL"
+        print(f"   {test_name.replace('_', ' ').title()}: {status}")
+    
+    if tester.critical_failures:
+        print("\n🚨 CRITICAL FAILURES (MUST FIX BEFORE LAUNCH):")
+        for failure in tester.critical_failures:
+            print(f"   ❌ {failure}")
+    
+    if tester.minor_issues:
+        print("\n⚠️  MINOR ISSUES (RECOMMENDED FIXES):")
+        for issue in tester.minor_issues:
+            print(f"   ⚠️  {issue}")
+    
+    # Final verdict
+    critical_tests_passed = all([
+        test_results['health_check'],
+        test_results['ai_generation'],
+        test_results['pdf_generation'],
+        test_results['cors_config'],
+        test_results['static_serving']
+    ])
+    
+    print("\n" + "=" * 80)
+    if critical_tests_passed and not tester.critical_failures:
+        print("🎉 READY FOR PRODUCTION LAUNCH!")
+        print("All critical functionality is working properly.")
+        if tester.minor_issues:
+            print("Consider addressing minor issues for optimal user experience.")
         return 0
     else:
-        print(f"⚠️  {tester.tests_run - tester.tests_passed} tests failed")
+        print("🚨 NOT READY FOR LAUNCH!")
+        print("Critical issues must be resolved before production deployment.")
         return 1
 
 if __name__ == "__main__":
