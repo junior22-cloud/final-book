@@ -1,7 +1,7 @@
 # Simplified BookWiz Backend - Production Ready v2.1 - Updated Buttons
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import Response, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 import os
 from dotenv import load_dotenv
