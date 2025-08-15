@@ -229,8 +229,8 @@ async def generate_pdf(topic: str):
         raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
 
 @app.get("/api/checkout")  
-async def create_checkout(topic: str = "General Book", tier: str = "pro"):
-    """Create Stripe checkout session with pre-configured products"""
+async def create_checkout(topic: str = "General Book", tier: str = "pro", upsells: str = ""):
+    """Create Stripe checkout session with pre-configured products and upsells"""
     try:
         # Pre-configured Stripe Products (from Stripe Dashboard)
         stripe_products = {
@@ -256,22 +256,71 @@ async def create_checkout(topic: str = "General Book", tier: str = "pro"):
                 "description": "Everything in Pro + Remove branding + Commercial rights + 100 books/month"
             }
         }
+
+        # Upsell products
+        upsell_products = {
+            "formatting": {
+                "price": 2999,  # $29.99
+                "name": "Professional Formatting",
+                "description": "Premium typography, margins, and layout design"
+            },
+            "printReady": {
+                "price": 4900,  # $49.00
+                "name": "Print-Ready PDF",
+                "description": "CMYK color profile + Print bleed setup + High-res graphics"
+            },
+            "rushDelivery": {
+                "price": 1999,  # $19.99
+                "name": "Rush Delivery",
+                "description": "2-hour delivery instead of standard timing"
+            },
+            "audioUpgrade": {
+                "price": 3999,  # $39.99
+                "name": "Premium Audio",
+                "description": "Professional voice actor + Background music + Chapter breaks"
+            }
+        }
         
         selected_product = stripe_products.get(tier, stripe_products["pro"])
         
-        # Create checkout session with pre-configured product
+        # Build line items starting with main product
+        line_items = [{
+            'price': selected_product["price_id"],  # Use pre-configured price ID
+            'quantity': 1,
+        }]
+        
+        # Add upsells to line items
+        total_price = selected_product["price"]
+        if upsells:
+            selected_upsells = upsells.split(',')
+            for upsell_id in selected_upsells:
+                if upsell_id in upsell_products:
+                    upsell = upsell_products[upsell_id]
+                    # Create dynamic price for upsells
+                    line_items.append({
+                        'price_data': {
+                            'currency': 'usd',
+                            'product_data': {
+                                'name': upsell["name"],
+                                'description': upsell["description"]
+                            },
+                            'unit_amount': upsell["price"],
+                        },
+                        'quantity': 1,
+                    })
+                    total_price += upsell["price"] / 100
+
+        # Create checkout session with main product + upsells
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
-            line_items=[{
-                'price': selected_product["price_id"],  # Use pre-configured price ID
-                'quantity': 1,
-            }],
+            line_items=line_items,
             mode='payment',
             success_url=f'https://wizbook.io/success?session_id={{CHECKOUT_SESSION_ID}}&topic={topic}&tier={tier}',
             cancel_url=f'https://wizbook.io/cancel?topic={topic}',
             metadata={
                 'topic': topic,
                 'tier': tier,
+                'upsells': upsells,
                 'product_name': selected_product["name"]
             }
         )
@@ -280,17 +329,27 @@ async def create_checkout(topic: str = "General Book", tier: str = "pro"):
             "checkout_url": session.url,
             "session_id": session.id, 
             "tier": tier,
-            "price": selected_product["price"],
+            "price": total_price,
+            "upsells": upsells.split(',') if upsells else [],
             "product_id": selected_product["product_id"]
         }
         
     except Exception as e:
         # Demo mode fallback with your product structure
+        base_price = stripe_products.get(tier, stripe_products["pro"])["price"]
+        upsell_price = 0
+        if upsells:
+            selected_upsells = upsells.split(',')
+            for upsell_id in selected_upsells:
+                if upsell_id in upsell_products:
+                    upsell_price += upsell_products[upsell_id]["price"] / 100
+        
         return {
-            "checkout_url": f"https://wizbook.io/demo-success?topic={topic}&tier={tier}",
+            "checkout_url": f"https://wizbook.io/demo-success?topic={topic}&tier={tier}&upsells={upsells}",
             "message": "Demo mode - Add STRIPE_SECRET_KEY to process real payments",
             "tier": tier,
-            "price": stripe_products.get(tier, stripe_products["pro"])["price"],
+            "price": base_price + upsell_price,
+            "upsells": upsells.split(',') if upsells else [],
             "demo": True
         }
 
