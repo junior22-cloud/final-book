@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>WizBook.io - Test Simplified Button System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: white;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .card {
+      background: rgba(255,255,255,0.98);
+      border-radius: 24px;
+      padding: 40px;
+      margin: 30px 0;
+      color: #333;
+    }
+    .input-group {
+      margin-bottom: 25px;
+    }
+    .input-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #374151;
+      font-size: 1.1rem;
+    }
+    .input-group input {
+      width: 100%;
+      padding: 16px 20px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 1.1rem;
+    }
+    .btn {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 18px 40px;
+      border-radius: 12px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 10px;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+    .btn-primary { background: linear-gradient(135deg, #10b981, #059669); }
+    .btn.business { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      margin: 40px 0;
+    }
+    .pricing-card {
+      background: white;
+      border: 2px solid #e5e7eb;
+      border-radius: 20px;
+      padding: 40px 30px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .pricing-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+    }
+    .pricing-card.highlighted {
+      border: 3px solid #667eea;
+      transform: scale(1.05);
+    }
+    .price {
+      font-size: 3.5rem;
+      font-weight: 800;
+      color: #667eea;
+      margin: 20px 0;
+    }
+    .form-section {
+      display: block;
+    }
+    .pricing-section {
+      display: none;
+    }
+    .alert {
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin: 20px 0;
+      font-weight: 500;
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #f87171;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 style="text-align: center; margin-bottom: 40px;">📖 WizBook.io - Test Simplified Button System</h1>
+    
+    <div id="errorAlert" class="alert"></div>
+
+    <!-- Form Section -->
+    <div class="card form-section" id="formSection">
+      <h2 style="text-align: center; margin-bottom: 40px;">Create Your Book</h2>
+
+      <div class="input-group">
+        <label for="topic">📚 What's your book about?</label>
+        <input
+          id="topic"
+          type="text"
+          placeholder="e.g., Digital Marketing Guide"
+        />
+      </div>
+
+      <div style="text-align: center;">
+        <button 
+          class="btn btn-primary" 
+          onclick="redirectToPayment()"
+          style="font-size: 1.2rem; padding: 20px 50px;"
+        >
+          📖 Create My Book →
+        </button>
+      </div>
+    </div>
+
+    <!-- Pricing Section -->
+    <div class="card pricing-section" id="pricingSection">
+      <h2 style="text-align: center; margin-bottom: 20px;">Choose Your Book Package</h2>
+      <p style="text-align: center; margin-bottom: 40px; color: #6b7280;">
+        Topic: <strong id="selectedTopic"></strong>
+      </p>
+
+      <div class="pricing-grid">
+        <!-- Basic Tier -->
+        <div class="pricing-card" onclick="redirectToPayment('basic')">
+          <h3>BASIC</h3>
+          <div class="price">$47</div>
+          <div style="color: #6b7280; margin-bottom: 25px;">24hr delivery</div>
+          <ul style="list-style: none; padding: 0; text-align: left;">
+            <li style="padding: 8px 0;">✓ AI-generated PDF</li>
+            <li style="padding: 8px 0;">✓ Standard cover</li>
+            <li style="padding: 8px 0;">✓ Watermarked footer</li>
+            <li style="padding: 8px 0;">✓ Email delivery</li>
+          </ul>
+          <button class="btn">Get Started</button>
+        </div>
+
+        <!-- Pro Tier -->
+        <div class="pricing-card highlighted" onclick="redirectToPayment('pro')">
+          <h3>PROFESSIONAL</h3>
+          <div class="price">$97</div>
+          <div style="color: #6b7280; margin-bottom: 25px;">12hr delivery</div>
+          <ul style="list-style: none; padding: 0; text-align: left;">
+            <li style="padding: 8px 0;">✓ Everything in Basic +</li>
+            <li style="padding: 8px 0;">✓ AI Audio narration</li>
+            <li style="padding: 8px 0;">✓ Editable DOCX files</li>
+            <li style="padding: 8px 0;">✓ 3 premium covers</li>
+            <li style="padding: 8px 0;">✓ Priority support</li>
+          </ul>
+          <button class="btn btn-primary">Get Pro</button>
+        </div>
+
+        <!-- White Label Tier -->
+        <div class="pricing-card" onclick="redirectToPayment('whitelabel')">
+          <h3>WHITE LABEL</h3>
+          <div class="price">$497</div>
+          <div style="color: #6b7280; margin-bottom: 25px;">Instant access</div>
+          <ul style="list-style: none; padding: 0; text-align: left;">
+            <li style="padding: 8px 0;">✓ Everything in Pro +</li>
+            <li style="padding: 8px 0;">✓ Remove all branding</li>
+            <li style="padding: 8px 0;">✓ Full commercial rights</li>
+            <li style="padding: 8px 0;">✓ 100 books/month license</li>
+            <li style="padding: 8px 0;">✓ API access</li>
+          </ul>
+          <button class="btn business">Start Business</button>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 40px;">
+        <button 
+          class="btn" 
+          onclick="showForm()"
+          style="background: #f3f4f6; color: #374151;"
+        >
+          ← Back
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Navigation functions
+    function showPricing() {
+      const topic = document.getElementById('topic').value.trim();
+      
+      if (!topic) {
+        showError('Please enter a book topic');
+        return;
+      }
+      
+      document.getElementById('selectedTopic').textContent = topic;
+      document.getElementById('formSection').style.display = 'none';
+      document.getElementById('pricingSection').style.display = 'block';
+    }
+
+    function showForm() {
+      document.getElementById('formSection').style.display = 'block';
+      document.getElementById('pricingSection').style.display = 'none';
+    }
+
+    // Simplified Payment Redirect Function - EXACTLY AS REQUESTED
+    function redirectToPayment(tier = null) {
+      // Simple validation - ensure topic is entered
+      const topic = document.getElementById('topic').value;
+      if (!topic || topic.trim() === '') {
+        alert("Please enter a book topic first!");
+        document.getElementById('topic').focus();
+        return;
+      }
+
+      // If no tier specified, show pricing first
+      if (!tier) {
+        showPricing();
+        return;
+      }
+
+      // DIRECTLY go to checkout with topic and tier
+      const encodedTopic = encodeURIComponent(topic.trim());
+      const checkoutUrl = `/api/checkout?topic=${encodedTopic}&tier=${tier}`;
+      
+      // For testing purposes, show what would happen
+      alert(`✅ REDIRECT TO PAYMENT:\n\nTopic: ${topic}\nTier: ${tier}\nURL: ${checkoutUrl}\n\n(In production, this would redirect to Stripe checkout)`);
+      
+      // In production, this would be:
+      // window.location.href = checkoutUrl;
+    }
+
+    // Error handling
+    function showError(message) {
+      const errorDiv = document.getElementById('errorAlert');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+      
+      setTimeout(() => {
+        errorDiv.style.display = 'none';
+      }, 5000);
+    }
+
+    // Test functions for validation
+    function testEmptyTopic() {
+      document.getElementById('topic').value = '';
+      redirectToPayment('basic');
+    }
+
+    function testWithTopic() {
+      document.getElementById('topic').value = 'Digital Marketing Guide';
+      redirectToPayment('pro');
+    }
+
+    console.log('✅ WizBook.io Simplified Button System Loaded');
+    console.log('📋 Available test functions:');
+    console.log('  - testEmptyTopic() - Test validation with empty topic');
+    console.log('  - testWithTopic() - Test with valid topic');
+    console.log('  - redirectToPayment() - Main function');
+  </script>
+</body>
+</html>
