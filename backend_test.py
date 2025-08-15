@@ -404,6 +404,7 @@ class WizBookTester:
         print(f"   3. There's a mismatch in requirements")
         
         return True  # This is informational, not a failure
+    def test_cors_configuration(self):
         """Test CORS configuration"""
         print("\n" + "="*60)
         print("🌐 CORS CONFIGURATION TESTS")
@@ -411,17 +412,20 @@ class WizBookTester:
         
         # Test preflight request
         try:
-            response = requests.options(f"{self.api_url}/", headers={
+            headers = {
                 'Origin': 'https://wizbook.io',
-                'Access-Control-Request-Method': 'GET',
+                'Access-Control-Request-Method': 'POST',
                 'Access-Control-Request-Headers': 'Content-Type'
-            }, timeout=30)
+            }
+            
+            response = requests.options(f"{self.api_url}/", headers=headers, timeout=30)
             
             self.tests_run += 1
             cors_headers = {
                 'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
                 'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
-                'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers')
+                'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers'),
+                'Access-Control-Allow-Credentials': response.headers.get('Access-Control-Allow-Credentials')
             }
             
             print(f"   CORS Headers: {cors_headers}")
@@ -429,6 +433,12 @@ class WizBookTester:
             if cors_headers['Access-Control-Allow-Origin']:
                 self.tests_passed += 1
                 print("✅ CORS configured")
+                
+                # Check if wildcard or specific origins
+                if cors_headers['Access-Control-Allow-Origin'] == '*':
+                    print("   ⚠️  Using wildcard origin (consider restricting for production)")
+                    self.minor_issues.append("CORS using wildcard origin - consider restricting")
+                
                 return True
             else:
                 print("❌ CORS not properly configured")
