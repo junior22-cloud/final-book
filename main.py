@@ -229,19 +229,40 @@ async def generate_pdf(topic: str):
         raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
 
 @app.get("/api/checkout")  
-async def create_checkout(topic: str = "General Book"):
-    """Create Stripe checkout for book purchase"""
+async def create_checkout(topic: str = "General Book", tier: str = "pro"):
+    """Create Stripe checkout session with tiered pricing"""
     try:
+        # Pricing tiers
+        pricing = {
+            "basic": {
+                "price": 1497,  # $14.97
+                "name": "AI Book - Basic",
+                "description": "5-chapter AI book + PDF download"
+            },
+            "pro": {
+                "price": 2497,  # $24.97 (BEST VALUE)
+                "name": "AI Book - Professional",
+                "description": "8-chapter AI book + Premium PDF + Commercial Rights"
+            },
+            "premium": {
+                "price": 4997,  # $49.97
+                "name": "AI Book - Premium",
+                "description": "12-chapter AI book + Premium PDF + Commercial Rights + 3 Bonus Templates"
+            }
+        }
+        
+        selected_tier = pricing.get(tier, pricing["pro"])
+        
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
                 'price_data': {
                     'currency': 'usd',
                     'product_data': {
-                        'name': f'AI Book: {topic}',
-                        'description': 'Professional AI-generated book with PDF download'
+                        'name': f'{selected_tier["name"]}: {topic}',
+                        'description': selected_tier["description"]
                     },
-                    'unit_amount': 999,  # $9.99
+                    'unit_amount': selected_tier["price"],
                 },
                 'quantity': 1,
             }],
@@ -249,18 +270,20 @@ async def create_checkout(topic: str = "General Book"):
             success_url='https://wizbook.io/success?topic=' + topic,
             cancel_url='https://wizbook.io/cancel',
         )
-        return {"checkout_url": session.url, "session_id": session.id}
+        
+        return {"checkout_url": session.url, "tier": tier, "price": selected_tier["price"]/100}
         
     except Exception as e:
         # Demo mode fallback
         return {
-            "checkout_url": f"https://yourdomain.com/success?topic={topic}",
-            "session_id": "demo_session_123",
-            "demo": True
+            "checkout_url": f"https://wizbook.io/demo-success?topic={topic}&tier={tier}",
+            "message": "Demo mode - Add STRIPE_SECRET_KEY to process real payments",
+            "tier": tier,
+            "price": selected_tier["price"]/100
         }
 
 # Serve static files (HTML frontend) - Mount after API routes
-app.mount("/", StaticFiles(directory="/app/frontend/static", html=True), name="static")
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
