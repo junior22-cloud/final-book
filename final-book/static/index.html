@@ -604,6 +604,68 @@
       }
     }
 
+    // Enhanced Payment Redirect Function
+    async function redirectToPayment(tier = null) {
+      try {
+        // Get topic from form
+        const topic = document.getElementById('topic').value;
+        if (!topic || topic.trim() === '') {
+          showError('Please enter a book topic first!');
+          document.getElementById('topic').focus();
+          return;
+        }
+
+        // If no tier specified, show pricing first
+        if (!tier) {
+          showPricing();
+          return;
+        }
+
+        // Validate tier selection
+        const validTiers = ['basic', 'pro', 'whitelabel'];
+        if (!validTiers.includes(tier)) {
+          showError('Invalid pricing tier selected.');
+          return;
+        }
+
+        // Show loading state
+        const loadingMsg = document.getElementById('loadingMessage');
+        if (loadingMsg) {
+          loadingMsg.style.display = 'block';
+          loadingMsg.textContent = `🚀 Preparing your ${tier} package...`;
+        }
+
+        // Call the checkout API
+        const response = await fetch(`/api/checkout?topic=${encodeURIComponent(topic)}&tier=${tier}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Checkout failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.checkout_url) {
+          // Redirect to Stripe checkout
+          window.location.href = data.checkout_url;
+        } else {
+          throw new Error('No checkout URL received');
+        }
+
+      } catch (error) {
+        console.error('Payment redirect error:', error);
+        showError('Failed to start checkout. Please try again.');
+        
+        // Hide loading message
+        const loadingMsg = document.getElementById('loadingMessage');
+        if (loadingMsg) {
+          loadingMsg.style.display = 'none';
+        }
+      }
+    }
+
     // Error handling
     function showError(message) {
       const errorDiv = document.getElementById('errorAlert');
