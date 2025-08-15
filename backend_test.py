@@ -421,48 +421,97 @@ class WizBookTester:
         
         return all(capture_results) and any(invalid_results) and any(incomplete_results)
 
-    def test_missing_endpoints(self):
-        """Test for endpoints mentioned in review request but not implemented"""
+    def test_stripe_webhook(self):
+        """Test POST /api/webhook - Stripe webhook handling"""
         print("\n" + "="*60)
-        print("🚨 MISSING ENDPOINTS ANALYSIS")
+        print("🔗 STRIPE WEBHOOK TESTS")
         print("="*60)
         
-        missing_endpoints = [
-            ("GET /api/generate", "AI generation with query params"),
-            ("GET /api/pdf", "PDF generation with query params"), 
-            ("GET /api/checkout", "Stripe checkout creation"),
-            ("POST /api/capture-email", "Email capture system"),
-            ("POST /api/webhook", "Stripe webhook handling")
+        # Test 1: Valid webhook payload (checkout.session.completed)
+        print("\n🔍 Testing Valid Webhook Payload...")
+        valid_webhook_payload = {
+            "type": "checkout.session.completed",
+            "data": {
+                "object": {
+                    "id": "cs_test_webhook_session",
+                    "metadata": {
+                        "topic": "Python Programming",
+                        "tier": "pro",
+                        "upsells": "formatting,rushDelivery"
+                    },
+                    "customer_details": {
+                        "email": "customer@example.com"
+                    },
+                    "amount_total": 14697  # $146.97 in cents
+                }
+            }
+        }
+        
+        success, response = self.run_test(
+            "Webhook - Valid Payload", 
+            "POST", 
+            "webhook", 
+            200,
+            json_data=valid_webhook_payload,
+            timeout=30
+        )
+        
+        if success and isinstance(response, dict):
+            if response.get('status') == 'success':
+                print("   ✅ Webhook processed successfully")
+            else:
+                self.minor_issues.append("Webhook didn't return success status")
+        
+        # Test 2: Invalid webhook payload
+        print("\n🔍 Testing Invalid Webhook Payload...")
+        invalid_payloads = [
+            {"type": "unknown.event", "data": {}},  # Unknown event type
+            {"data": {"object": {}}},  # Missing type
+            {},  # Empty payload
+            {"type": "checkout.session.completed"}  # Missing data
         ]
         
-        print("🔍 Checking for endpoints mentioned in review request...")
-        for endpoint, description in missing_endpoints:
-            method, path = endpoint.split(' ', 1)
-            endpoint_path = path.replace('/api/', '')
-            
-            print(f"\n   Testing {endpoint} - {description}")
-            success, response = self.run_test(
-                f"Missing Endpoint Check - {endpoint}", 
-                method, 
-                endpoint_path, 
-                404,  # Expecting 404 for missing endpoints
-                timeout=10
+        invalid_results = []
+        for payload in invalid_payloads:
+            webhook_success, webhook_response = self.run_test(
+                "Webhook - Invalid Payload", 
+                "POST", 
+                "webhook", 
+                200,  # Webhook should handle gracefully
+                json_data=payload,
+                timeout=30
             )
-            
-            if not success:
-                # If we didn't get 404, the endpoint might exist but with different behavior
-                print(f"     ⚠️  Endpoint {endpoint} exists but behaves differently than expected")
-            else:
-                print(f"     ❌ Endpoint {endpoint} not implemented")
+            invalid_results.append(webhook_success)
         
-        print(f"\n📝 ANALYSIS: The review request expects endpoints that don't match current implementation.")
-        print(f"   Current backend implements different endpoint patterns.")
-        print(f"   This suggests either:")
-        print(f"   1. Review request is outdated")
-        print(f"   2. Backend implementation is incomplete")
-        print(f"   3. There's a mismatch in requirements")
+        # Test 3: Webhook without signature (demo mode)
+        print("\n🔍 Testing Webhook Demo Mode...")
+        demo_payload = {
+            "type": "checkout.session.completed",
+            "data": {
+                "object": {
+                    "id": "cs_demo_session",
+                    "metadata": {
+                        "topic": "Demo Topic",
+                        "tier": "basic"
+                    },
+                    "customer_details": {
+                        "email": "demo@example.com"
+                    },
+                    "amount_total": 4700  # $47.00 in cents
+                }
+            }
+        }
         
-        return True  # This is informational, not a failure
+        demo_success, demo_response = self.run_test(
+            "Webhook - Demo Mode", 
+            "POST", 
+            "webhook", 
+            200,
+            json_data=demo_payload,
+            timeout=30
+        )
+        
+        return success and any(invalid_results) and demo_success
 
     def test_cors_configuration(self):
         """Test CORS configuration"""
