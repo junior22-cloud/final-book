@@ -698,84 +698,71 @@
                 Topic: <strong>{formData.topic}</strong>
               </p>
 
-              <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px', marginBottom: '30px'}}>
-                {Object.entries(pricingTiers).map(([tier, info]) => (
-                  <div
-                    key={tier}
-                    onClick={() => setSelectedTier(tier)}
-                    style={{
-                      border: selectedTier === tier ? '3px solid #667eea' : '2px solid #e5e7eb',
-                      borderRadius: '16px',
-                      padding: '30px',
-                      cursor: 'pointer',
-                      background: selectedTier === tier ? 'rgba(102, 126, 234, 0.05)' : 'white',
-                      transition: 'all 0.3s ease',
-                      position: 'relative',
-                      minHeight: '400px'
-                    }}
-                  >
-                    {tier === 'pro' && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '-10px',
-                        right: '20px',
-                        background: '#f59e0b',
-                        color: 'white',
-                        padding: '5px 15px',
-                        borderRadius: '20px',
-                        fontSize: '0.8rem',
-                        fontWeight: 'bold'
-                      }}>
-                        MOST POPULAR
-                      </div>
-                    )}
-                    
-                    {tier === 'whitelabel' && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '-10px',
-                        right: '20px',
-                        background: '#dc2626',
-                        color: 'white',
-                        padding: '5px 15px',
-                        borderRadius: '20px',
-                        fontSize: '0.8rem',
-                        fontWeight: 'bold'
-                      }}>
-                        BUSINESS
-                      </div>
-                    )}
-                    
-                    <h3 style={{fontSize: '1.8rem', marginBottom: '10px', color: '#1f2937', textTransform: 'uppercase'}}>{info.name}</h3>
-                    <div style={{fontSize: '3rem', fontWeight: 'bold', color: '#667eea', marginBottom: '10px'}}>
-                      ${info.price}
-                    </div>
-                    <div style={{marginBottom: '25px', color: '#6b7280', fontWeight: '500'}}>
-                      {info.delivery}
-                    </div>
-                    
-                    <ul style={{listStyle: 'none', padding: 0}}>
-                      {info.features.map((feature, index) => (
-                        <li key={index} style={{padding: '10px 0', color: '#374151', display: 'flex', alignItems: 'flex-start'}}>
-                          <span style={{color: '#10b981', marginRight: '12px', marginTop: '2px', fontSize: '1.2rem'}}>✓</span>
-                          <span style={{lineHeight: '1.5'}}>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+              <div className="pricing-grid">
+                {/* Basic Tier */}
+                <div 
+                  className={`pricing-card ${selectedTier === 'basic' ? 'selected' : ''}`}
+                  onClick={() => setSelectedTier('basic')}
+                >
+                  <h3>Basic</h3>
+                  <p className="price">$47</p>
+                  <div className="delivery-time">24hr delivery</div>
+                  <ul>
+                    <li>AI-generated PDF</li>
+                    <li>Standard cover</li>
+                    <li>Watermarked footer</li>
+                    <li>Email delivery</li>
+                  </ul>
+                  <button className="cta">Get Started</button>
+                </div>
+
+                {/* Pro Tier (Recommended) */}
+                <div 
+                  className={`pricing-card highlighted ${selectedTier === 'pro' ? 'selected' : ''}`}
+                  onClick={() => setSelectedTier('pro')}
+                >
+                  <div className="badge">BEST VALUE</div>
+                  <h3>Professional</h3>
+                  <p className="price">$97</p>
+                  <div className="delivery-time">12hr delivery</div>
+                  <ul>
+                    <li><strong>Everything in Basic +</strong></li>
+                    <li>AI Audio narration</li>
+                    <li>Editable DOCX files</li>
+                    <li>3 premium covers</li>
+                    <li>Priority support</li>
+                  </ul>
+                  <button className="cta primary">Get Pro</button>
+                </div>
+
+                {/* White Label Tier */}
+                <div 
+                  className={`pricing-card ${selectedTier === 'whitelabel' ? 'selected' : ''}`}
+                  onClick={() => setSelectedTier('whitelabel')}
+                >
+                  <div className="badge business">BUSINESS</div>
+                  <h3>White Label</h3>
+                  <p className="price">$497</p>
+                  <div className="delivery-time">Instant access</div>
+                  <ul>
+                    <li><strong>Everything in Pro +</strong></li>
+                    <li>Remove all branding</li>
+                    <li>Full commercial rights</li>
+                    <li>100 books/month license</li>
+                    <li>API access</li>
+                  </ul>
+                  <button className="cta business">Start Business</button>
+                </div>
               </div>
 
-              <div style={{textAlign: 'center'}}>
+              <div style={{textAlign: 'center', marginTop: '40px'}}>
                 <button 
                   className="btn btn-primary" 
                   onClick={handlePricingContinue}
                   style={{
                     fontSize: '1.3rem', 
                     padding: '25px 60px', 
-                    marginRight: '20px',
-                    background: selectedTier === 'whitelabel' ? 'linear-gradient(135deg, #dc2626, #b91c1c)' : 'linear-gradient(135deg, #667eea, #764ba2)',
-                    boxShadow: '0 8px 25px rgba(102, 126, 234, 0.4)'
+                    marginRight: '20px'
                   }}
                 >
                   {selectedTier === 'whitelabel' ? '🚀 Get Business License' : '💎 Continue to Checkout'} - ${pricingTiers[selectedTier].price}
