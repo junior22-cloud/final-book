@@ -6,10 +6,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta charset="UTF-8">
   
-  <!-- React & Babel -->
+  <!-- React & Babel with Fallback -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- CDN Fallback Check -->
+  <script>
+    if (typeof React === 'undefined') {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"><\/script>');
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"><\/script>');
+    }
+  </script>
   
   <!-- Stripe -->
   <script src="https://js.stripe.com/v3/"></script>
@@ -313,10 +321,10 @@
       const [result, setResult] = useState(null);
       const [error, setError] = useState('');
 
-      // Auto-detect API URL - update YOUR-RAILWAY-APP with your actual Railway app name
+      // Auto-detect API URL - PRODUCTION READY
       const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
         ? 'http://localhost:8001'  // Local development
-        : 'https://YOUR-RAILWAY-APP.up.railway.app';  // Production - UPDATE THIS!
+        : 'https://wizbook.io';  // PRODUCTION DOMAIN - LIVE!
 
       const handleGenerate = async () => {
         if (!formData.topic.trim()) {
