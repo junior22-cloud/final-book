@@ -10,6 +10,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.colors import Color
 from io import BytesIO
+from datetime import datetime
 
 # Load environment
 load_dotenv()
@@ -399,8 +400,43 @@ async def stripe_webhook(request: Request):
         print(f"Webhook error: {str(e)}")
         return {"error": str(e)}, 400
 
+@app.post("/api/capture-email")
+async def capture_email(request: Request):
+    """Capture email for urgency marketing sequence"""
+    try:
+        data = await request.json()
+        email = data.get('email', '').lower().strip()
+        tier_interest = data.get('tier_interest', '')
+        topic = data.get('topic', '')
+        
+        if not email or '@' not in email:
+            raise HTTPException(status_code=400, detail="Valid email required")
+        
+        # Log email capture (in production, save to database)
+        print(f"📧 EMAIL CAPTURED: {email}")
+        print(f"   Tier Interest: {tier_interest}")
+        print(f"   Topic: {topic}")
+        print(f"   Timestamp: {datetime.now()}")
+        
+        # Here you would:
+        # 1. Save to email marketing database (Mailchimp, ConvertKit, etc.)
+        # 2. Tag with tier interest and topic
+        # 3. Add to urgency email sequence
+        # 4. Set trigger for 5-day countdown emails
+        
+        return {
+            "status": "success", 
+            "message": "Email captured successfully",
+            "email": email,
+            "sequence": "urgency_5_day"
+        }
+        
+    except Exception as e:
+        print(f"Email capture error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Email capture failed")
+
 # Serve static files (HTML frontend) - Mount after API routes
-app.mount("/", StaticFiles(directory="final-book/static", html=True), name="static")
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
