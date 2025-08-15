@@ -436,7 +436,7 @@ async def capture_email(request: Request):
         raise HTTPException(status_code=500, detail="Email capture failed")
 
 # Serve static files (HTML frontend) - Mount after API routes
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
+app.mount("/", StaticFiles(directory="final-book/static", html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
