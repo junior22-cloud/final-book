@@ -855,45 +855,85 @@ class WizBookTester:
         return concurrent_success and memory_success and pdf_success
 
 def main():
-    print("🚀 GOD MODE BACKEND AUDIT - COMPREHENSIVE TESTING")
+    print("🚀 WIZBOOK.IO LAUNCH READINESS TEST - COMPREHENSIVE BACKEND AUDIT")
     print("=" * 80)
-    print("Testing all critical endpoints and functionality with zero bugs escape protocol")
+    print("Testing all critical endpoints for production launch readiness")
+    print("Focus: API Keys, AI Generation, PDF, Stripe, Email Capture, Performance")
     print("=" * 80)
     
     tester = WizBookTester()
     
-    # Run all comprehensive tests in order of priority
+    # Run all comprehensive tests in order of launch priority
     test_results = {}
     
-    # Core functionality tests
+    # LAUNCH CRITICAL TESTS - Must pass for production
+    print("\n🎯 LAUNCH CRITICAL TESTS")
+    print("-" * 40)
+    test_results['api_keys_loading'] = tester.test_api_keys_loading()
     test_results['health_check'] = tester.test_health_check()
     test_results['ai_book_generation'] = tester.test_ai_book_generation()
     test_results['pdf_generation'] = tester.test_pdf_generation()
     test_results['stripe_checkout'] = tester.test_stripe_checkout()
     test_results['email_capture_system'] = tester.test_email_capture_system()
-    test_results['stripe_webhook'] = tester.test_stripe_webhook()
     
-    # Infrastructure and security tests
+    # INFRASTRUCTURE TESTS - Important for stability
+    print("\n🔧 INFRASTRUCTURE TESTS")
+    print("-" * 40)
     test_results['cors_configuration'] = tester.test_cors_configuration()
-    test_results['security_and_edge_cases'] = tester.test_security_and_edge_cases()
+    test_results['stripe_webhook'] = tester.test_stripe_webhook()
     test_results['performance_and_reliability'] = tester.test_performance_and_reliability()
+    
+    # SECURITY TESTS - Important for production
+    print("\n🔒 SECURITY TESTS")
+    print("-" * 40)
+    test_results['security_and_edge_cases'] = tester.test_security_and_edge_cases()
     
     # Print comprehensive results
     print("\n" + "=" * 80)
-    print("📊 COMPREHENSIVE TEST RESULTS")
+    print("📊 LAUNCH READINESS TEST RESULTS")
     print("=" * 80)
     
     print(f"Total Tests Run: {tester.tests_run}")
     print(f"Tests Passed: {tester.tests_passed}")
     print(f"Success Rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
     
-    print("\n🎯 TEST CATEGORY RESULTS:")
-    for test_name, result in test_results.items():
+    # Launch Critical Results
+    launch_critical_tests = [
+        'api_keys_loading', 'health_check', 'ai_book_generation', 
+        'pdf_generation', 'stripe_checkout', 'email_capture_system'
+    ]
+    
+    launch_critical_passed = sum(1 for test in launch_critical_tests if test_results.get(test, False))
+    launch_critical_total = len(launch_critical_tests)
+    
+    print(f"\n🎯 LAUNCH CRITICAL TESTS: {launch_critical_passed}/{launch_critical_total} PASSED")
+    for test_name in launch_critical_tests:
+        result = test_results.get(test_name, False)
         status = "✅ PASS" if result else "❌ FAIL"
         print(f"   {test_name.replace('_', ' ').title()}: {status}")
     
+    print(f"\n🔧 INFRASTRUCTURE TESTS:")
+    infrastructure_tests = ['cors_configuration', 'stripe_webhook', 'performance_and_reliability']
+    for test_name in infrastructure_tests:
+        result = test_results.get(test_name, False)
+        status = "✅ PASS" if result else "❌ FAIL"
+        print(f"   {test_name.replace('_', ' ').title()}: {status}")
+    
+    print(f"\n🔒 SECURITY TESTS:")
+    security_tests = ['security_and_edge_cases']
+    for test_name in security_tests:
+        result = test_results.get(test_name, False)
+        status = "✅ PASS" if result else "❌ FAIL"
+        print(f"   {test_name.replace('_', ' ').title()}: {status}")
+    
+    # Launch Readiness Issues
+    if tester.launch_readiness_issues:
+        print("\n🚨 LAUNCH READINESS ISSUES (MUST FIX BEFORE LAUNCH):")
+        for issue in tester.launch_readiness_issues:
+            print(f"   🚨 {issue}")
+    
     if tester.critical_failures:
-        print("\n🚨 CRITICAL FAILURES (MUST FIX BEFORE LAUNCH):")
+        print("\n❌ CRITICAL FAILURES:")
         for failure in tester.critical_failures:
             print(f"   ❌ {failure}")
     
@@ -902,45 +942,49 @@ def main():
         for issue in tester.minor_issues:
             print(f"   ⚠️  {issue}")
     
-    # Final verdict
-    critical_tests_passed = all([
-        test_results['health_check'],
-        test_results['ai_book_generation'],
-        test_results['pdf_generation'],
-        test_results['stripe_checkout'],
-        test_results['cors_configuration']
-    ])
+    # Final Launch Readiness Verdict
+    launch_ready = (launch_critical_passed == launch_critical_total and 
+                   len(tester.launch_readiness_issues) == 0 and 
+                   len(tester.critical_failures) == 0)
     
     print("\n" + "=" * 80)
-    print("🎯 GOD MODE AUDIT SUMMARY")
+    print("🎯 WIZBOOK.IO LAUNCH READINESS VERDICT")
     print("=" * 80)
     
-    if critical_tests_passed and not tester.critical_failures:
-        print("🎉 BACKEND READY FOR PRODUCTION LAUNCH!")
-        print("All critical functionality is working properly.")
+    if launch_ready:
+        print("🎉 BACKEND IS LAUNCH READY!")
+        print("✅ All critical functionality working")
+        print("✅ API keys properly configured")
+        print("✅ Core features operational")
+        
+        print(f"\n📈 LAUNCH READINESS METRICS:")
+        print(f"   ✅ API Keys Loading: {'✅' if test_results.get('api_keys_loading') else '❌'}")
+        print(f"   ✅ AI Generation: {'✅' if test_results.get('ai_book_generation') else '❌'}")
+        print(f"   ✅ PDF Generation: {'✅' if test_results.get('pdf_generation') else '❌'}")
+        print(f"   ✅ Stripe Integration: {'✅' if test_results.get('stripe_checkout') else '❌'}")
+        print(f"   ✅ Email Capture: {'✅' if test_results.get('email_capture_system') else '❌'}")
+        print(f"   ✅ Performance: {'✅' if test_results.get('performance_and_reliability') else '❌'}")
+        
         if tester.minor_issues:
-            print("Consider addressing minor issues for optimal user experience.")
+            print(f"\n⚠️  Consider addressing {len(tester.minor_issues)} minor issues for optimal experience")
         
-        print(f"\n📈 PERFORMANCE METRICS:")
-        print(f"   - AI generation working across multiple topics")
-        print(f"   - PDF generation with watermarking functional")
-        print(f"   - Stripe checkout with upsells working")
-        print(f"   - Email capture system operational")
-        print(f"   - Webhook handling implemented")
-        print(f"   - Security tests passed")
-        
+        print("\n🚀 READY FOR PRODUCTION LAUNCH!")
         return 0
     else:
         print("🚨 BACKEND NOT READY FOR LAUNCH!")
-        print("Critical issues must be resolved before production deployment.")
+        print("❌ Critical issues must be resolved")
         
-        if not critical_tests_passed:
-            print("\n❌ Failed Critical Tests:")
-            critical_test_names = ['health_check', 'ai_book_generation', 'pdf_generation', 'stripe_checkout', 'cors_configuration']
-            for test_name in critical_test_names:
-                if not test_results.get(test_name, False):
-                    print(f"   - {test_name.replace('_', ' ').title()}")
+        print(f"\n❌ FAILED LAUNCH CRITICAL TESTS:")
+        for test_name in launch_critical_tests:
+            if not test_results.get(test_name, False):
+                print(f"   ❌ {test_name.replace('_', ' ').title()}")
         
+        if tester.launch_readiness_issues:
+            print(f"\n🚨 LAUNCH BLOCKING ISSUES:")
+            for issue in tester.launch_readiness_issues:
+                print(f"   🚨 {issue}")
+        
+        print("\n⚠️  DO NOT LAUNCH UNTIL ALL CRITICAL ISSUES ARE RESOLVED")
         return 1
 
 if __name__ == "__main__":
