@@ -1289,7 +1289,9 @@
       );
     }
 
-    ReactDOM.render(<WizBookApp />, document.getElementById('root'));
+    // React 18 compatible rendering
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<WizBookApp />);
   </script>
 </body>
 </html>
