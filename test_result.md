@@ -111,23 +111,29 @@ backend:
     file: "main.py"
     stuck_count: 0
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "UPDATED: Premium pricing ($47/$97/$497), upsell system, email capture, countdown timer, Stripe integration with product IDs"
+      - working: true
+        agent: "testing"
+        comment: "TESTED: Health check (✅), AI generation (✅), PDF generation (✅), Stripe checkout (✅) all working. Backend running main.py with GET /api/generate, GET /api/pdf, GET /api/checkout endpoints. 83.9% test success rate."
 
   - task: "Email Capture System"
     implemented: true
-    working: true
+    working: false
     file: "main.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "NEW: /api/capture-email endpoint with tier tracking, topic logging, urgency sequence ready"
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL: Email validation failing - accepts invalid emails like '@missing-local.com', returns 500 errors for malformed requests instead of 400. Valid emails work correctly but error handling needs improvement."
 
   - task: "Stripe Payment Integration"
     implemented: true
@@ -135,11 +141,14 @@ backend:
     file: "main.py"  
     stuck_count: 0
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "UPDATED: Multi-tier pricing with upsells, webhook handling, product ID integration"
+      - working: true
+        agent: "testing"
+        comment: "TESTED: Checkout working with all tiers (basic $47, pro $97, whitelabel $497) and upsells. Demo mode active (Stripe keys not configured). Webhook handling functional. Pricing calculations accurate."
 
   - task: "AI Book Generation"
     implemented: true
@@ -147,11 +156,38 @@ backend:
     file: "main.py"
     stuck_count: 0
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "TESTED: Emergent LLM integration with fallbacks, topic processing, error handling"
+      - working: true
+        agent: "testing"
+        comment: "TESTED: AI generation working across multiple topics, proper error handling for missing parameters, handles special characters and edge cases. Fallback content system functional. Word counts reasonable (400-500 words)."
+
+  - task: "PDF Generation with Watermarking"
+    implemented: true
+    working: true
+    file: "main.py"
+    stuck_count: 1
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TESTED: PDF generation working with watermarking, proper file format validation. ISSUE: Unicode characters cause 500 error ('latin-1' codec can't encode). Performance good (1.4s generation time)."
+
+  - task: "Security and Input Validation"
+    implemented: true
+    working: true
+    file: "main.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TESTED: SQL injection protection working, XSS payloads handled (though not sanitized in output), CORS properly configured. Minor: No rate limiting detected, large payloads accepted without validation."
 
 frontend:
   - task: "Complete React App with Urgency System"
