@@ -230,56 +230,68 @@ async def generate_pdf(topic: str):
 
 @app.get("/api/checkout")  
 async def create_checkout(topic: str = "General Book", tier: str = "pro"):
-    """Create Stripe checkout session with tiered pricing"""
+    """Create Stripe checkout session with pre-configured products"""
     try:
-        # Premium Pricing Tiers
-        pricing = {
+        # Pre-configured Stripe Products (from Stripe Dashboard)
+        stripe_products = {
             "basic": {
-                "price": 4700,  # $47.00
-                "name": "AI Book - Basic",
-                "description": "AI-generated PDF + Standard cover + Watermarked footer + 24hr delivery"
+                "price_id": "price_1OQk9X1...",  # Replace with your actual price ID
+                "product_id": "prod_PQk9X1...",  # Your Basic eBook product ID
+                "price": 47.00,
+                "name": "Basic eBook",
+                "description": "AI-generated PDF + Standard cover + Watermarked + 24hr delivery"
             },
             "pro": {
-                "price": 9700,  # $97.00 (BEST VALUE)
-                "name": "AI Book - Professional", 
-                "description": "Everything in Basic + Audio narration (AI) + Editable DOCX + 3 premium covers + 12hr delivery"
+                "price_id": "price_1OQk9X2...",  # Replace with your actual price ID  
+                "product_id": "prod_PQk9X2...",  # Your Pro Package product ID
+                "price": 97.00,
+                "name": "Pro Package",
+                "description": "Everything in Basic + Audio narration + Editable DOCX + 3 premium covers"
             },
             "whitelabel": {
-                "price": 49700,  # $497.00
-                "name": "AI Book - White Label",
-                "description": "Everything in Pro + Remove branding + Commercial rights + 100 books/month license"
+                "price_id": "price_1OQk9X3...",  # You'll need to create this one
+                "product_id": "prod_PQk9X3...",   # You'll need to create this one
+                "price": 497.00,
+                "name": "White Label License",
+                "description": "Everything in Pro + Remove branding + Commercial rights + 100 books/month"
             }
         }
         
-        selected_tier = pricing.get(tier, pricing["pro"])
+        selected_product = stripe_products.get(tier, stripe_products["pro"])
         
+        # Create checkout session with pre-configured product
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {
-                        'name': f'{selected_tier["name"]}: {topic}',
-                        'description': selected_tier["description"]
-                    },
-                    'unit_amount': selected_tier["price"],
-                },
+                'price': selected_product["price_id"],  # Use pre-configured price ID
                 'quantity': 1,
             }],
             mode='payment',
-            success_url='https://wizbook.io/success?topic=' + topic,
-            cancel_url='https://wizbook.io/cancel',
+            success_url=f'https://wizbook.io/success?session_id={{CHECKOUT_SESSION_ID}}&topic={topic}&tier={tier}',
+            cancel_url=f'https://wizbook.io/cancel?topic={topic}',
+            metadata={
+                'topic': topic,
+                'tier': tier,
+                'product_name': selected_product["name"]
+            }
         )
         
-        return {"checkout_url": session.url, "tier": tier, "price": selected_tier["price"]/100}
+        return {
+            "checkout_url": session.url,
+            "session_id": session.id, 
+            "tier": tier,
+            "price": selected_product["price"],
+            "product_id": selected_product["product_id"]
+        }
         
     except Exception as e:
-        # Demo mode fallback
+        # Demo mode fallback with your product structure
         return {
             "checkout_url": f"https://wizbook.io/demo-success?topic={topic}&tier={tier}",
             "message": "Demo mode - Add STRIPE_SECRET_KEY to process real payments",
             "tier": tier,
-            "price": selected_tier["price"]/100
+            "price": stripe_products.get(tier, stripe_products["pro"])["price"],
+            "demo": True
         }
 
 # Serve static files (HTML frontend) - Mount after API routes
