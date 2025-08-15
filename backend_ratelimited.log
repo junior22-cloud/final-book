@@ -1,0 +1,25 @@
+INFO:     Started server process [4959]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:47162 - "GET /api/test HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42278 - "POST /api/generate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50660 - "POST /api/generate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50666 - "POST /api/generate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50680 - "POST /api/generate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50688 - "POST /api/generate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50694 - "POST /api/generate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50698 - "POST /api/generate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50702 - "POST /api/generate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50714 - "POST /api/generate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50726 - "POST /api/generate HTTP/1.1" 200 OK
+WARNING:slowapi:ratelimit 10 per 1 minute (127.0.0.1) exceeded at endpoint: /api/generate
+INFO:     127.0.0.1:50736 - "POST /api/generate HTTP/1.1" 429 Too Many Requests
+WARNING:slowapi:ratelimit 10 per 1 minute (127.0.0.1) exceeded at endpoint: /api/generate
+INFO:     127.0.0.1:50738 - "POST /api/generate HTTP/1.1" 429 Too Many Requests
+WARNING:slowapi:ratelimit 10 per 1 minute (127.0.0.1) exceeded at endpoint: /api/generate
+INFO:     127.0.0.1:50746 - "POST /api/generate HTTP/1.1" 429 Too Many Requests
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [4959]

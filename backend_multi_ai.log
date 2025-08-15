@@ -1,0 +1,11 @@
+INFO:     Started server process [6595]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:59482 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57618 - "POST /api/generate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43546 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51420 - "POST /api/generate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51054 - "POST /api/export HTTP/1.1" 200 OK
+ERROR:root:Checkout failed: Invalid API Key provided: sk_test_****************_key
+INFO:     127.0.0.1:51066 - "POST /api/checkout HTTP/1.1" 200 OK

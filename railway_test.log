@@ -1,0 +1,7 @@
+INFO:     Started server process [827]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:48522 - "GET /generate?topic=JavaScript HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36052 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33996 - "GET / HTTP/1.1" 200 OK
