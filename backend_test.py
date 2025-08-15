@@ -7,7 +7,7 @@ from datetime import datetime
 import uuid
 
 class WizBookTester:
-    def __init__(self, base_url="https://6c01608b-cf88-4ee1-bbbe-13267a9381af.preview.emergentagent.com"):
+    def __init__(self, base_url="https://wizpdf-maker.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0
