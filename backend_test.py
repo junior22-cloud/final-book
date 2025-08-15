@@ -237,52 +237,96 @@ class WizBookTester:
         
         return all(pdf_results) and any(edge_results)
 
-    def test_pricing_system(self):
-        """Test GET /api/pricing - Premium pricing system"""
+    def test_stripe_checkout(self):
+        """Test GET /api/checkout - Stripe payment integration"""
         print("\n" + "="*60)
-        print("💰 PRICING SYSTEM TESTS")
+        print("💳 STRIPE CHECKOUT TESTS")
         print("="*60)
         
-        success, response = self.run_test(
-            "Pricing Tiers", 
+        # Test 1: Basic checkout with different tiers
+        tiers = ["basic", "pro", "whitelabel"]
+        checkout_results = []
+        
+        for tier in tiers:
+            print(f"\n🔍 Testing {tier.upper()} tier checkout...")
+            success, response = self.run_test(
+                f"Stripe Checkout - {tier.upper()} Tier", 
+                "GET", 
+                "checkout", 
+                200,
+                params={
+                    "topic": "Python Programming",
+                    "tier": tier,
+                    "upsells": "formatting,rushDelivery"
+                },
+                timeout=60
+            )
+            
+            if success and isinstance(response, dict):
+                required_fields = ['checkout_url', 'tier', 'price']
+                missing_fields = [field for field in required_fields if field not in response]
+                if missing_fields:
+                    self.minor_issues.append(f"Checkout response missing fields: {missing_fields}")
+                else:
+                    print(f"   Checkout URL: {response.get('checkout_url')}")
+                    print(f"   Tier: {response.get('tier')}")
+                    print(f"   Price: ${response.get('price')}")
+                    
+                    if response.get('demo'):
+                        print("   ⚠️  Demo mode detected (Stripe keys not configured)")
+                        self.minor_issues.append("Stripe running in demo mode")
+                    
+                    # Validate pricing logic
+                    expected_prices = {
+                        "basic": 47.0,
+                        "pro": 97.0, 
+                        "whitelabel": 497.0
+                    }
+                    base_price = expected_prices.get(tier, 0)
+                    actual_price = response.get('price', 0)
+                    
+                    # Account for upsells (formatting + rushDelivery = $29.99 + $19.99 = $49.98)
+                    expected_total = base_price + 49.98
+                    if abs(actual_price - expected_total) > 1.0:  # Allow $1 tolerance
+                        self.minor_issues.append(f"{tier} tier pricing mismatch: expected ~${expected_total}, got ${actual_price}")
+            
+            checkout_results.append(success)
+        
+        # Test 2: Default parameters
+        print("\n🔍 Testing Default Checkout Parameters...")
+        default_success, default_response = self.run_test(
+            "Stripe Checkout - Default", 
             "GET", 
-            "pricing", 
+            "checkout", 
             200,
             timeout=30
         )
         
-        if success and isinstance(response, dict):
-            if 'tiers' in response:
-                tiers = response['tiers']
-                print(f"   Available Tiers: {len(tiers)}")
-                
-                expected_tiers = ["basic", "pro", "premium"]
-                found_tiers = [tier.get('id') for tier in tiers]
-                
-                for expected_tier in expected_tiers:
-                    if expected_tier not in found_tiers:
-                        self.minor_issues.append(f"Missing expected pricing tier: {expected_tier}")
-                
-                # Validate tier structure
-                for tier in tiers:
-                    required_fields = ['id', 'name', 'price', 'description', 'features']
-                    missing_fields = [field for field in required_fields if field not in tier]
-                    if missing_fields:
-                        self.minor_issues.append(f"Tier {tier.get('id', 'unknown')} missing fields: {missing_fields}")
-                    else:
-                        print(f"   {tier['name']}: ${tier['price']} - {tier['description']}")
-                        print(f"     Features: {len(tier['features'])} items")
-                
-                # Validate pricing logic
-                prices = [tier.get('price', 0) for tier in tiers if tier.get('id') in expected_tiers]
-                if len(prices) >= 3 and not (prices[0] < prices[1] < prices[2]):
-                    self.minor_issues.append("Pricing tiers not in ascending order")
-                    
-            else:
-                self.critical_failures.append("Pricing endpoint missing 'tiers' field")
-                success = False
+        # Test 3: Upsell combinations
+        print("\n🔍 Testing Upsell Combinations...")
+        upsell_combinations = [
+            ("formatting", "Professional Formatting only"),
+            ("printReady,audioUpgrade", "Print-Ready + Audio"),
+            ("formatting,printReady,rushDelivery,audioUpgrade", "All upsells")
+        ]
         
-        return success
+        upsell_results = []
+        for upsells, description in upsell_combinations:
+            success, response = self.run_test(
+                f"Checkout with {description}", 
+                "GET", 
+                "checkout", 
+                200,
+                params={
+                    "topic": "Test Topic",
+                    "tier": "pro",
+                    "upsells": upsells
+                },
+                timeout=30
+            )
+            upsell_results.append(success)
+        
+        return all(checkout_results) and default_success and any(upsell_results)
 
     def test_books_listing(self):
         """Test GET /api/books - List recent books"""
