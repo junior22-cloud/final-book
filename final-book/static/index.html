@@ -37,6 +37,62 @@
       line-height: 1.6;
     }
     
+    .email-popup {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .email-popup-content {
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      max-width: 500px;
+      text-align: center;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .email-popup-close {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #6b7280;
+    }
+
+    .email-input {
+      width: 100%;
+      padding: 15px 20px;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .email-input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
     .countdown-banner {
       background: linear-gradient(135deg, #dc2626, #b91c1c);
       color: white;
@@ -558,6 +614,8 @@
       const [step, setStep] = useState('home'); // home, pricing, upsells, generate, result
       const [selectedTier, setSelectedTier] = useState('pro');
       const [selectedUpsells, setSelectedUpsells] = useState([]);
+      const [showEmailPopup, setShowEmailPopup] = useState(false);
+      const [email, setEmail] = useState('');
       const [formData, setFormData] = useState({
         topic: '',
         audience: 'beginners',
@@ -626,6 +684,62 @@
       const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
         ? 'http://localhost:8001'  // Local development
         : 'https://wizbook.io';  // PRODUCTION DOMAIN - LIVE!
+
+      // Email capture on exit intent
+      useEffect(() => {
+        let timer;
+        const handleExitIntent = (e) => {
+          if (e.clientY <= 0 && !showEmailPopup && !localStorage.getItem('wizbook_email_captured')) {
+            setShowEmailPopup(true);
+          }
+        };
+
+        // Show email popup after 30 seconds on pricing page
+        if (step === 'pricing') {
+          timer = setTimeout(() => {
+            if (!showEmailPopup && !localStorage.getItem('wizbook_email_captured')) {
+              setShowEmailPopup(true);
+            }
+          }, 30000);
+        }
+
+        document.addEventListener('mouseleave', handleExitIntent);
+        return () => {
+          document.removeEventListener('mouseleave', handleExitIntent);
+          if (timer) clearTimeout(timer);
+        };
+      }, [step, showEmailPopup]);
+
+      const handleEmailCapture = async (e) => {
+        e.preventDefault();
+        if (!email || !email.includes('@')) {
+          setError('Please enter a valid email address');
+          return;
+        }
+
+        try {
+          const response = await fetch(`${API_URL}/api/capture-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              email, 
+              tier_interest: selectedTier,
+              topic: formData.topic 
+            })
+          });
+
+          if (response.ok) {
+            localStorage.setItem('wizbook_email_captured', 'true');
+            setShowEmailPopup(false);
+            // Show success message
+            alert('✅ You\'re on the list! We\'ll email you before prices increase.');
+          }
+        } catch (err) {
+          console.error('Email capture failed:', err);
+          // Still close popup to not annoy user
+          setShowEmailPopup(false);
+        }
+      };
 
       const handleGenerate = async () => {
         if (!formData.topic.trim()) {
@@ -1011,6 +1125,49 @@
       return (
         <>
           <CountdownBanner />
+          
+          {/* Email Capture Popup */}
+          {showEmailPopup && (
+            <div className="email-popup">
+              <div className="email-popup-content">
+                <button 
+                  className="email-popup-close"
+                  onClick={() => setShowEmailPopup(false)}
+                >
+                  ×
+                </button>
+                
+                <h2 style={{color: '#1f2937', marginBottom: '15px'}}>⚠️ Don't Miss The Deadline!</h2>
+                <p style={{color: '#6b7280', marginBottom: '20px', fontSize: '1.1rem'}}>
+                  WizBook prices increase in <strong>5 days</strong>. Get notified before we raise prices!
+                </p>
+                
+                <form onSubmit={handleEmailCapture}>
+                  <input
+                    type="email"
+                    className="email-input"
+                    placeholder="Enter your email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                  
+                  <button 
+                    type="submit"
+                    className="btn btn-primary"
+                    style={{width: '100%', marginTop: '10px'}}
+                  >
+                    🔔 Notify Me Before Price Increase
+                  </button>
+                </form>
+                
+                <p style={{fontSize: '0.85rem', color: '#9ca3af', marginTop: '15px'}}>
+                  We'll only email you about price changes. Unsubscribe anytime.
+                </p>
+              </div>
+            </div>
+          )}
+          
           <div className="hero">
             <h1>📖 WizBook.io</h1>
             <p className="tagline">Professional AI Books for Business Leaders</p>
