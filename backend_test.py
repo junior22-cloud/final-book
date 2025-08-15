@@ -16,7 +16,7 @@ class WizBookTester:
         self.minor_issues = []
         self.generated_book_ids = []  # Track generated books for cleanup
 
-    def run_test(self, name, method, endpoint, expected_status, params=None, timeout=60):
+    def run_test(self, name, method, endpoint, expected_status, params=None, json_data=None, timeout=60, headers=None):
         """Run a single API test"""
         if endpoint.startswith('http'):
             url = endpoint
@@ -30,10 +30,16 @@ class WizBookTester:
         print(f"   URL: {url}")
         
         try:
+            request_headers = headers or {}
             if method == 'GET':
-                response = requests.get(url, params=params, timeout=timeout)
+                response = requests.get(url, params=params, timeout=timeout, headers=request_headers)
             elif method == 'POST':
-                response = requests.post(url, json=params, timeout=timeout)
+                if json_data:
+                    response = requests.post(url, json=json_data, timeout=timeout, headers=request_headers)
+                else:
+                    response = requests.post(url, json=params, timeout=timeout, headers=request_headers)
+            elif method == 'OPTIONS':
+                response = requests.options(url, timeout=timeout, headers=request_headers)
 
             success = response.status_code == expected_status
             if success:
@@ -44,6 +50,9 @@ class WizBookTester:
                         response_data = response.json()
                         print(f"   Response keys: {list(response_data.keys()) if isinstance(response_data, dict) else 'Non-dict response'}")
                         return True, response_data
+                    elif 'application/pdf' in response.headers.get('content-type', ''):
+                        print(f"   PDF Content-Length: {len(response.content)} bytes")
+                        return True, response.content
                     else:
                         print(f"   Content-Type: {response.headers.get('content-type', 'unknown')}")
                         print(f"   Content-Length: {len(response.content)} bytes")
