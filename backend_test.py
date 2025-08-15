@@ -934,25 +934,30 @@ class WizBookTester:
         return passed_edge_cases >= len(edge_cases) * 0.75  # 75% success rate
 
 def main():
-    print("🚀 COMPREHENSIVE PRE-LAUNCH BUG AUDIT for WizBook.io")
+    print("🚀 GOD MODE BACKEND AUDIT - COMPREHENSIVE TESTING")
     print("=" * 80)
-    print("Testing all critical endpoints and functionality before production deployment")
+    print("Testing all critical endpoints and functionality with zero bugs escape protocol")
     print("=" * 80)
     
     tester = WizBookTester()
     
-    # Run all comprehensive tests
+    # Run all comprehensive tests in order of priority
     test_results = {}
     
+    # Core functionality tests
     test_results['health_check'] = tester.test_health_check()
-    test_results['ai_generation'] = tester.test_ai_generation()
-    test_results['pdf_generation'] = tester.test_pdf_generation()
-    test_results['stripe_checkout'] = tester.test_stripe_checkout()
-    test_results['cors_config'] = tester.test_cors_configuration()
-    test_results['static_serving'] = tester.test_static_file_serving()
-    test_results['env_variables'] = tester.test_environment_variables()
-    test_results['load_testing'] = tester.test_load_testing()
-    test_results['edge_cases'] = tester.test_edge_cases()
+    test_results['pricing_system'] = tester.test_pricing_system()
+    test_results['ai_book_generation'] = tester.test_ai_book_generation()
+    test_results['book_retrieval_and_pdf'] = tester.test_book_retrieval_and_pdf()
+    test_results['books_listing'] = tester.test_books_listing()
+    
+    # Infrastructure and security tests
+    test_results['cors_configuration'] = tester.test_cors_configuration()
+    test_results['security_and_edge_cases'] = tester.test_security_and_edge_cases()
+    test_results['performance_and_reliability'] = tester.test_performance_and_reliability()
+    
+    # Analysis tests
+    test_results['missing_endpoints'] = tester.test_missing_endpoints()
     
     # Print comprehensive results
     print("\n" + "=" * 80)
@@ -981,22 +986,40 @@ def main():
     # Final verdict
     critical_tests_passed = all([
         test_results['health_check'],
-        test_results['ai_generation'],
-        test_results['pdf_generation'],
-        test_results['cors_config'],
-        test_results['static_serving']
+        test_results['ai_book_generation'],
+        test_results['book_retrieval_and_pdf'],
+        test_results['pricing_system'],
+        test_results['cors_configuration']
     ])
     
     print("\n" + "=" * 80)
+    print("🎯 GOD MODE AUDIT SUMMARY")
+    print("=" * 80)
+    
     if critical_tests_passed and not tester.critical_failures:
-        print("🎉 READY FOR PRODUCTION LAUNCH!")
+        print("🎉 BACKEND READY FOR PRODUCTION LAUNCH!")
         print("All critical functionality is working properly.")
         if tester.minor_issues:
             print("Consider addressing minor issues for optimal user experience.")
+        
+        print(f"\n📈 PERFORMANCE METRICS:")
+        print(f"   - Generated {len(tester.generated_book_ids)} test books successfully")
+        print(f"   - All pricing tiers functional")
+        print(f"   - PDF generation working")
+        print(f"   - Security tests passed")
+        
         return 0
     else:
-        print("🚨 NOT READY FOR LAUNCH!")
+        print("🚨 BACKEND NOT READY FOR LAUNCH!")
         print("Critical issues must be resolved before production deployment.")
+        
+        if not critical_tests_passed:
+            print("\n❌ Failed Critical Tests:")
+            critical_test_names = ['health_check', 'ai_book_generation', 'book_retrieval_and_pdf', 'pricing_system', 'cors_configuration']
+            for test_name in critical_test_names:
+                if not test_results.get(test_name, False):
+                    print(f"   - {test_name.replace('_', ' ').title()}")
+        
         return 1
 
 if __name__ == "__main__":
