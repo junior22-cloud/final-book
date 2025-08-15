@@ -409,8 +409,19 @@ async def capture_email(request: Request):
         tier_interest = data.get('tier_interest', '')
         topic = data.get('topic', '')
         
-        if not email or '@' not in email:
-            raise HTTPException(status_code=400, detail="Valid email required")
+        # Proper email validation
+        if not email:
+            raise HTTPException(status_code=400, detail="Email is required")
+        
+        # Basic email format validation
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, email):
+            raise HTTPException(status_code=400, detail="Invalid email format")
+        
+        # Additional validation
+        if len(email) > 255:
+            raise HTTPException(status_code=400, detail="Email too long")
         
         # Log email capture (in production, save to database)
         print(f"📧 EMAIL CAPTURED: {email}")
@@ -431,12 +442,14 @@ async def capture_email(request: Request):
             "sequence": "urgency_5_day"
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Email capture error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Email capture failed")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # Serve static files (HTML frontend) - Mount after API routes
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
+app.mount("/", StaticFiles(directory="final-book/static", html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
