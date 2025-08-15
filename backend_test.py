@@ -192,53 +192,82 @@ class WizBookTester:
         
         return all(tier_results) and any(edge_results)
 
-    def test_pdf_generation(self):
-        """Test GET /api/pdf?topic=Python Programming - PDF generation with watermark"""
+    def test_book_retrieval_and_pdf(self):
+        """Test GET /api/book/{book_id} and GET /api/book/{book_id}/pdf"""
         print("\n" + "="*60)
-        print("📄 PDF GENERATION TESTS")
+        print("📚 BOOK RETRIEVAL & PDF GENERATION TESTS")
         print("="*60)
         
+        if not self.generated_book_ids:
+            print("⚠️  No book IDs available for testing. Skipping book retrieval tests.")
+            return False
+        
+        book_id = self.generated_book_ids[0]
+        
+        # Test 1: Book retrieval
+        print(f"\n🔍 Testing Book Retrieval for ID: {book_id}")
         success, response = self.run_test(
-            "PDF Generation - Python Programming", 
+            "Book Retrieval", 
             "GET", 
-            "pdf", 
+            f"book/{book_id}", 
             200,
-            params={"topic": "Python Programming"},
+            timeout=30
+        )
+        
+        if success and isinstance(response, dict):
+            required_fields = ['id', 'book_request', 'content', 'status', 'word_count', 'created_at']
+            missing_fields = [field for field in required_fields if field not in response]
+            if missing_fields:
+                self.minor_issues.append(f"Book retrieval response missing fields: {missing_fields}")
+            else:
+                print(f"   Book ID: {response.get('id')}")
+                print(f"   Status: {response.get('status')}")
+                print(f"   Word Count: {response.get('word_count')}")
+        
+        # Test 2: PDF generation
+        print(f"\n🔍 Testing PDF Generation for ID: {book_id}")
+        pdf_success, pdf_response = self.run_test(
+            "PDF Generation", 
+            "GET", 
+            f"book/{book_id}/pdf", 
+            200,
             timeout=120
         )
         
-        if success:
-            if isinstance(response, bytes) and len(response) > 1000:
-                print(f"   PDF Size: {len(response)} bytes")
+        if pdf_success:
+            if isinstance(pdf_response, bytes) and len(pdf_response) > 1000:
+                print(f"   PDF Size: {len(pdf_response)} bytes")
                 # Check if it's actually a PDF
-                if response[:4] == b'%PDF':
+                if pdf_response[:4] == b'%PDF':
                     print("   ✅ Valid PDF format detected")
                 else:
                     self.minor_issues.append("PDF response doesn't start with PDF header")
             else:
                 self.critical_failures.append("PDF Generation: Invalid or empty PDF response")
-                success = False
+                pdf_success = False
         
-        # Test error handling
-        print("\n🔍 Testing PDF Error Handling - Missing Topic...")
+        # Test 3: Non-existent book
+        print("\n🔍 Testing Non-existent Book Retrieval...")
+        fake_id = str(uuid.uuid4())
         error_success, error_response = self.run_test(
-            "PDF Generation - Missing Topic", 
+            "Non-existent Book Retrieval", 
             "GET", 
-            "pdf", 
-            422,
+            f"book/{fake_id}", 
+            404,
             timeout=30
         )
         
-        if not error_success:
-            error_success, error_response = self.run_test(
-                "PDF Generation - Missing Topic (Alt)", 
-                "GET", 
-                "pdf", 
-                400,
-                timeout=30
-            )
+        # Test 4: Non-existent book PDF
+        print("\n🔍 Testing Non-existent Book PDF...")
+        pdf_error_success, pdf_error_response = self.run_test(
+            "Non-existent Book PDF", 
+            "GET", 
+            f"book/{fake_id}/pdf", 
+            404,
+            timeout=30
+        )
         
-        return success
+        return success and pdf_success
 
     def test_stripe_checkout(self):
         """Test GET /api/checkout?topic=Python Programming - Stripe payment flow"""
