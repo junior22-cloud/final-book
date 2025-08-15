@@ -617,11 +617,11 @@
               <div style={{textAlign: 'center'}}>
                 <button 
                   className="btn btn-primary" 
-                  onClick={handleGenerate}
-                  disabled={loading}
+                  onClick={handleGenerateClick}
+                  disabled={loading || !formData.topic.trim()}
                   style={{fontSize: '1.2rem', padding: '20px 50px'}}
                 >
-                  🚀 Generate Book ($9.99)
+                  📖 Create My Book →
                 </button>
               </div>
 
