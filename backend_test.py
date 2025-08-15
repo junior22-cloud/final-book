@@ -93,104 +93,82 @@ class WizBookTester:
         return success
 
     def test_ai_book_generation(self):
-        """Test POST /api/generate-book - AI book generation with comprehensive testing"""
+        """Test GET /api/generate - AI book generation (actual endpoint)"""
         print("\n" + "="*60)
         print("🤖 AI BOOK GENERATION TESTS")
         print("="*60)
         
-        # Test 1: Basic book generation with all tiers
-        tiers = ["basic", "pro", "premium"]
-        tier_results = []
+        # Test 1: Basic book generation with different topics
+        topics = [
+            "Python Programming for Beginners",
+            "Digital Marketing Strategies", 
+            "Personal Finance Management"
+        ]
         
-        for tier in tiers:
-            print(f"\n🔍 Testing {tier.upper()} tier generation...")
-            book_request = {
-                "topic": "Python Programming for Beginners",
-                "audience": "beginners",
-                "style": "professional",
-                "length": "medium",
-                "tier": tier,
-                "email": "test@wizbook.io"
-            }
-            
+        generation_results = []
+        
+        for topic in topics:
+            print(f"\n🔍 Testing generation for topic: {topic}")
             success, response = self.run_test(
-                f"AI Book Generation - {tier.upper()} Tier", 
-                "POST", 
-                "generate-book", 
+                f"AI Book Generation - {topic}", 
+                "GET", 
+                "generate", 
                 200,
-                json_data=book_request,
+                params={"topic": topic},
                 timeout=120
             )
             
             if success and isinstance(response, dict):
-                required_fields = ['id', 'topic', 'audience', 'content', 'status', 'tier', 'word_count', 'created_at']
+                required_fields = ['book', 'topic', 'word_count', 'status']
                 missing_fields = [field for field in required_fields if field not in response]
                 if missing_fields:
                     self.minor_issues.append(f"Generation response missing fields: {missing_fields}")
                 else:
-                    print(f"   Book ID: {response.get('id')}")
                     print(f"   Topic: {response.get('topic')}")
-                    print(f"   Tier: {response.get('tier')}")
                     print(f"   Word Count: {response.get('word_count')}")
                     print(f"   Status: {response.get('status')}")
-                    print(f"   Content Preview: {response.get('content', '')[:100]}...")
+                    print(f"   Content Preview: {response.get('book', '')[:100]}...")
                     
-                    # Store book ID for later tests
-                    self.generated_book_ids.append(response.get('id'))
-                    
-                    # Validate word count expectations
+                    # Validate word count is reasonable
                     word_count = response.get('word_count', 0)
-                    expected_ranges = {
-                        "basic": (3000, 10000),
-                        "pro": (8000, 20000), 
-                        "premium": (15000, 35000)
-                    }
-                    min_words, max_words = expected_ranges.get(tier, (0, 999999))
-                    if not (min_words <= word_count <= max_words):
-                        self.minor_issues.append(f"{tier} tier word count {word_count} outside expected range {min_words}-{max_words}")
+                    if word_count < 100:
+                        self.minor_issues.append(f"Word count too low: {word_count}")
+                    elif word_count > 10000:
+                        self.minor_issues.append(f"Word count very high: {word_count}")
             
-            tier_results.append(success)
+            generation_results.append(success)
         
-        # Test 2: Error handling - Invalid request
-        print("\n🔍 Testing Error Handling - Invalid Request...")
-        invalid_request = {
-            "topic": "",  # Empty topic
-            "audience": "beginners"
-            # Missing required fields
-        }
-        
+        # Test 2: Error handling - Missing topic parameter
+        print("\n🔍 Testing Error Handling - Missing Topic...")
         error_success, error_response = self.run_test(
-            "AI Generation - Invalid Request", 
-            "POST", 
-            "generate-book", 
+            "AI Generation - Missing Topic", 
+            "GET", 
+            "generate", 
             422,  # Expecting validation error
-            json_data=invalid_request,
             timeout=30
         )
         
-        # Test 3: Edge cases
+        # Test 3: Edge cases with special characters and long topics
         print("\n🔍 Testing Edge Cases...")
         edge_cases = [
-            ("Long Topic", {"topic": "A" * 500, "audience": "professionals", "tier": "basic"}),
-            ("Special Characters", {"topic": "Python & AI: 100% Success!", "audience": "beginners", "tier": "pro"}),
-            ("Unicode Topic", {"topic": "机器学习与人工智能", "audience": "beginners", "tier": "basic"}),
+            ("Special Characters", "Python & AI: 100% Success!"),
+            ("Unicode Topic", "机器学习与人工智能"),
+            ("Long Topic", "A" * 200),
         ]
         
         edge_results = []
-        for case_name, request_data in edge_cases:
+        for case_name, topic in edge_cases:
             success, response = self.run_test(
                 f"AI Generation - {case_name}", 
-                "POST", 
-                "generate-book", 
+                "GET", 
+                "generate", 
                 200,
-                json_data=request_data,
+                params={"topic": topic},
                 timeout=90
             )
             edge_results.append(success)
-            if success and isinstance(response, dict):
-                self.generated_book_ids.append(response.get('id'))
         
-        return all(tier_results) and any(edge_results)
+        return all(generation_results) and any(edge_results)
 
     def test_book_retrieval_and_pdf(self):
         """Test GET /api/book/{book_id} and GET /api/book/{book_id}/pdf"""
