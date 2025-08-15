@@ -16,6 +16,9 @@
       text-align: center;
       padding: 15px;
       animation: pulse 2s infinite;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
     }
     @keyframes pulse {
       0%, 100% { transform: scale(1); }
@@ -35,6 +38,24 @@
       font-size: 1.5rem;
       opacity: 0.9;
     }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 30px;
+      margin: 40px 0;
+    }
+    .feature {
+      text-align: center;
+      padding: 30px 20px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+    }
+    .feature-icon {
+      font-size: 3.5rem;
+      margin-bottom: 15px;
+      display: block;
+    }
     .container {
       max-width: 900px;
       margin: 0 auto;
@@ -46,6 +67,37 @@
       padding: 40px;
       margin: 30px 0;
       color: #333;
+    }
+    .form-section {
+      display: block;
+    }
+    .pricing-section {
+      display: none;
+    }
+    .input-group {
+      margin-bottom: 25px;
+    }
+    .input-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #374151;
+      font-size: 1.1rem;
+    }
+    .input-group input, .input-group select {
+      width: 100%;
+      padding: 16px 20px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+      background: #fafafa;
+    }
+    .input-group input:focus, .input-group select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+      background: white;
     }
     .pricing-grid {
       display: grid;
@@ -62,6 +114,7 @@
       position: relative;
       cursor: pointer;
       transition: all 0.3s ease;
+      min-height: 450px;
     }
     .pricing-card:hover {
       transform: translateY(-5px);
@@ -70,6 +123,10 @@
     .pricing-card.highlighted {
       border: 3px solid #667eea;
       transform: scale(1.05);
+    }
+    .pricing-card.selected {
+      border: 3px solid #10b981;
+      background: rgba(16, 185, 129, 0.03);
     }
     .badge {
       position: absolute;
@@ -100,8 +157,8 @@
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s ease;
-      width: 100%;
-      margin-top: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     .btn:hover {
       transform: translateY(-2px);
@@ -109,24 +166,99 @@
     }
     .btn-primary { background: linear-gradient(135deg, #10b981, #059669); }
     .btn.business { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
     ul {
       list-style: none;
       padding: 0;
       text-align: left;
+      margin: 25px 0;
     }
     li {
       padding: 12px 0;
       border-bottom: 1px solid #f3f4f6;
+      display: flex;
+      align-items: center;
     }
     li::before {
       content: '✓';
       color: #10b981;
       font-weight: bold;
       margin-right: 12px;
+      flex-shrink: 0;
+    }
+    .email-popup {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      animation: fadeIn 0.3s ease;
+    }
+    .email-popup.show {
+      display: flex;
+    }
+    .email-popup-content {
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      max-width: 500px;
+      text-align: center;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      color: #333;
+    }
+    .email-popup-close {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #6b7280;
+    }
+    .email-input {
+      width: 100%;
+      padding: 15px 20px;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .email-input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+    .alert {
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin: 20px 0;
+      font-weight: 500;
+    }
+    .alert-error {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #f87171;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
     @media (max-width: 768px) {
       .hero h1 { font-size: 2.5rem; }
-      .pricing-grid { grid-template-columns: 1fr; }
+      .pricing-grid { grid-template-columns: 1fr; gap: 20px; }
+      .pricing-card { min-height: auto; padding: 30px 20px; }
       .pricing-card.highlighted { transform: none; }
     }
   </style>
@@ -140,40 +272,140 @@
     </div>
   </div>
 
+  <!-- Email Capture Popup -->
+  <div class="email-popup" id="emailPopup">
+    <div class="email-popup-content">
+      <button class="email-popup-close" onclick="closeEmailPopup()">×</button>
+      <h2 style="margin-bottom: 15px;">⚠️ Don't Miss The Deadline!</h2>
+      <p style="margin-bottom: 20px; font-size: 1.1rem;">
+        WizBook prices increase in <strong>5 days</strong>. Get notified before we raise prices!
+      </p>
+      <div id="emailError" class="alert alert-error" style="display: none;"></div>
+      <form onsubmit="submitEmail(event)">
+        <input
+          type="email"
+          class="email-input"
+          id="emailInput"
+          placeholder="Enter your email address"
+          required
+        />
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+          🔔 Notify Me Before Price Increase
+        </button>
+      </form>
+      <p style="font-size: 0.85rem; color: #9ca3af; margin-top: 15px;">
+        We'll only email you about price changes. Unsubscribe anytime.
+      </p>
+    </div>
+  </div>
+
   <!-- Hero Section -->
   <div class="hero">
     <h1>📖 WizBook.io</h1>
     <p>Professional AI Books for Business Leaders</p>
+    
+    <div class="features">
+      <div class="feature">
+        <span class="feature-icon">⚡</span>
+        <h3>Enterprise Quality</h3>
+        <p>Professional books with audio narration and premium covers</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">🎨</span>
+        <h3>White Label Ready</h3>
+        <p>Remove branding and get commercial rights for your business</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">📄</span>
+        <h3>Multi-Format</h3>
+        <p>PDF, DOCX, and AI audio narration included</p>
+      </div>
+    </div>
   </div>
 
-  <!-- Pricing Section -->
+  <!-- Main Content -->
   <div class="container">
-    <div class="card">
-      <h2 style="text-align: center; font-size: 2.2rem; margin-bottom: 40px;">
+    <div id="errorAlert" class="alert alert-error" style="display: none;"></div>
+
+    <!-- Form Section -->
+    <div class="card form-section" id="formSection">
+      <h2 style="text-align: center; margin-bottom: 40px; color: #1f2937; font-size: 2.2rem;">
+        Create Your Book
+      </h2>
+
+      <div class="input-group">
+        <label for="topic">📚 What's your book about?</label>
+        <input
+          id="topic"
+          type="text"
+          placeholder="e.g., Python Programming, Digital Marketing, Coffee Shop Business Plan"
+        />
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 25px;">
+        <div class="input-group">
+          <label for="audience">👥 Target Audience</label>
+          <select id="audience">
+            <option value="beginners">Complete Beginners</option>
+            <option value="intermediate">Intermediate Level</option>
+            <option value="advanced">Advanced Users</option>
+            <option value="professionals">Business Professionals</option>
+            <option value="students">Students</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label for="style">✍️ Writing Style</label>
+          <select id="style">
+            <option value="professional">Professional</option>
+            <option value="casual">Casual & Friendly</option>
+            <option value="academic">Academic</option>
+            <option value="conversational">Conversational</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="text-align: center;">
+        <button 
+          class="btn btn-primary" 
+          onclick="showPricing()"
+          style="font-size: 1.2rem; padding: 20px 50px;"
+        >
+          📖 Create My Book →
+        </button>
+      </div>
+    </div>
+
+    <!-- Pricing Section -->
+    <div class="card pricing-section" id="pricingSection">
+      <h2 style="text-align: center; margin-bottom: 20px; color: #1f2937; font-size: 2.2rem;">
         Choose Your Book Package
       </h2>
+      <p style="text-align: center; margin-bottom: 40px; color: #6b7280;">
+        Topic: <strong id="selectedTopic"></strong>
+      </p>
 
       <div class="pricing-grid">
         <!-- Basic Tier -->
-        <div class="pricing-card">
+        <div class="pricing-card" onclick="selectTier('basic')">
           <h3>BASIC</h3>
           <div class="price">$47 <span style="font-size: 1rem; color: #dc2626; text-decoration: line-through;">$67</span></div>
-          <p style="color: #6b7280; margin-bottom: 25px;">24hr delivery</p>
+          <div style="color: #6b7280; margin-bottom: 25px;">24hr delivery</div>
           <ul>
             <li>AI-generated PDF</li>
             <li>Standard cover</li>
             <li>Watermarked footer</li>
             <li>Email delivery</li>
           </ul>
-          <button class="btn" onclick="selectTier('basic')">Get Started</button>
+          <button class="btn">Get Started</button>
         </div>
 
         <!-- Pro Tier -->
-        <div class="pricing-card highlighted">
+        <div class="pricing-card highlighted" onclick="selectTier('pro')">
           <div class="badge">BEST VALUE - SAVE $50</div>
           <h3>PROFESSIONAL</h3>
           <div class="price">$97 <span style="font-size: 1rem; color: #dc2626; text-decoration: line-through;">$147</span></div>
-          <p style="color: #6b7280; margin-bottom: 25px;">12hr delivery</p>
+          <div style="color: #6b7280; margin-bottom: 25px;">12hr delivery</div>
           <ul>
             <li><strong>Everything in Basic +</strong></li>
             <li>AI Audio narration</li>
@@ -181,15 +413,15 @@
             <li>3 premium covers</li>
             <li>Priority support</li>
           </ul>
-          <button class="btn btn-primary" onclick="selectTier('pro')">Get Pro</button>
+          <button class="btn btn-primary">Get Pro</button>
         </div>
 
         <!-- White Label Tier -->
-        <div class="pricing-card">
+        <div class="pricing-card" onclick="selectTier('whitelabel')">
           <div class="badge business">BUSINESS - SAVE $200</div>
           <h3>WHITE LABEL</h3>
           <div class="price">$497 <span style="font-size: 1rem; color: #dc2626; text-decoration: line-through;">$697</span></div>
-          <p style="color: #6b7280; margin-bottom: 25px;">Instant access</p>
+          <div style="color: #6b7280; margin-bottom: 25px;">Instant access</div>
           <ul>
             <li><strong>Everything in Pro +</strong></li>
             <li>Remove all branding</li>
@@ -197,36 +429,190 @@
             <li>100 books/month license</li>
             <li>API access</li>
           </ul>
-          <button class="btn business" onclick="selectTier('whitelabel')">Start Business</button>
+          <button class="btn business">Start Business</button>
         </div>
       </div>
 
       <div style="text-align: center; background: #fbbf24; color: #1f2937; padding: 20px; border-radius: 12px; margin-top: 40px; font-weight: bold;">
         ⚠️ <strong>PRICE INCREASE WARNING:</strong> These prices will increase automatically in 5 days. Lock in your rate now!
       </div>
+
+      <div style="text-align: center; margin-top: 40px;">
+        <button 
+          class="btn" 
+          onclick="showForm()"
+          style="font-size: 1rem; padding: 20px 35px; background: #f3f4f6; color: #374151;"
+        >
+          ← Back
+        </button>
+      </div>
     </div>
   </div>
 
   <script>
-    // Simple countdown timer
+    // Global variables
+    let selectedTier = 'pro';
+    let emailCaptured = localStorage.getItem('wizbook_email_captured');
+    let exitIntentShown = false;
+    let timeOnSite = 0;
+
+    // Initialize app
+    document.addEventListener('DOMContentLoaded', function() {
+      updateCountdown();
+      setInterval(updateCountdown, 1000);
+      
+      // Email capture triggers
+      document.addEventListener('mouseleave', handleExitIntent);
+      
+      // Time on site tracking
+      setInterval(() => {
+        timeOnSite++;
+        if (timeOnSite === 30 && !emailCaptured && !exitIntentShown) {
+          showEmailPopup();
+        }
+      }, 1000);
+    });
+
+    // Countdown timer
     function updateCountdown() {
       const deadline = new Date();
       deadline.setDate(deadline.getDate() + 5);
       
       const now = new Date();
       const diff = deadline - now;
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
       
-      document.getElementById('countdown').textContent = days + ' DAYS LEFT AT CURRENT PRICES';
+      if (diff > 0) {
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        
+        let timeText;
+        if (days > 0) {
+          timeText = `${days} DAYS LEFT AT CURRENT PRICES`;
+        } else if (hours > 0) {
+          timeText = `${hours} HOURS LEFT AT CURRENT PRICES`;
+        } else {
+          timeText = `${minutes} MINUTES LEFT AT CURRENT PRICES`;
+        }
+        
+        document.getElementById('countdown').textContent = timeText;
+      } else {
+        document.getElementById('countdown').textContent = 'PRICES HAVE INCREASED!';
+      }
     }
-    
-    setInterval(updateCountdown, 1000);
-    updateCountdown();
+
+    // Navigation functions
+    function showPricing() {
+      const topic = document.getElementById('topic').value.trim();
+      
+      if (!topic) {
+        showError('Please enter a book topic');
+        return;
+      }
+      
+      document.getElementById('selectedTopic').textContent = topic;
+      document.getElementById('formSection').style.display = 'none';
+      document.getElementById('pricingSection').style.display = 'block';
+      
+      // Trigger email popup after viewing pricing
+      if (!emailCaptured && !exitIntentShown) {
+        setTimeout(showEmailPopup, 10000); // 10 seconds on pricing page
+      }
+    }
+
+    function showForm() {
+      document.getElementById('formSection').style.display = 'block';
+      document.getElementById('pricingSection').style.display = 'none';
+    }
 
     // Tier selection
     function selectTier(tier) {
+      selectedTier = tier;
+      
+      // Clear previous selections
+      document.querySelectorAll('.pricing-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      
+      // Select current tier
+      event.currentTarget.classList.add('selected');
+      
+      // Simulate checkout (in production, this would call the API)
       const prices = { basic: 47, pro: 97, whitelabel: 497 };
-      alert(`Selected ${tier.toUpperCase()} tier ($${prices[tier]})\n\nIn production, this would redirect to checkout with:\n/api/checkout?tier=${tier}`);
+      const topic = document.getElementById('selectedTopic').textContent;
+      
+      setTimeout(() => {
+        const confirmText = `Selected: ${tier.toUpperCase()} - $${prices[tier]}\nTopic: ${topic}\n\nIn production, this redirects to:\n/api/checkout?topic=${encodeURIComponent(topic)}&tier=${tier}`;
+        alert(confirmText);
+      }, 300);
+    }
+
+    // Email capture functions
+    function handleExitIntent(e) {
+      if (e.clientY <= 0 && !emailCaptured && !exitIntentShown) {
+        showEmailPopup();
+      }
+    }
+
+    function showEmailPopup() {
+      if (!emailCaptured) {
+        exitIntentShown = true;
+        document.getElementById('emailPopup').classList.add('show');
+      }
+    }
+
+    function closeEmailPopup() {
+      document.getElementById('emailPopup').classList.remove('show');
+    }
+
+    async function submitEmail(event) {
+      event.preventDefault();
+      
+      const emailInput = document.getElementById('emailInput');
+      const email = emailInput.value.trim();
+      const errorDiv = document.getElementById('emailError');
+      
+      // Validate email
+      if (!email || !email.includes('@')) {
+        errorDiv.textContent = 'Please enter a valid email address';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/capture-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            email: email,
+            tier_interest: selectedTier,
+            topic: document.getElementById('topic').value || 'Unknown'
+          })
+        });
+        
+        if (response.ok) {
+          localStorage.setItem('wizbook_email_captured', 'true');
+          emailCaptured = true;
+          closeEmailPopup();
+          alert('✅ You\'re on the list! We\'ll email you before prices increase.');
+        } else {
+          throw new Error('Server error');
+        }
+      } catch (err) {
+        errorDiv.textContent = 'Failed to save email. Please try again.';
+        errorDiv.style.display = 'block';
+      }
+    }
+
+    // Error handling
+    function showError(message) {
+      const errorDiv = document.getElementById('errorAlert');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+      
+      setTimeout(() => {
+        errorDiv.style.display = 'none';
+      }, 5000);
     }
   </script>
 </body>
