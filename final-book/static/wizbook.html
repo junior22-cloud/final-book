@@ -387,7 +387,7 @@
 
       const handlePayment = async () => {
         try {
-          const response = await fetch(`${API_URL}/api/checkout?topic=${encodeURIComponent(formData.topic)}`);
+          const response = await fetch(`${API_URL}/api/checkout?topic=${encodeURIComponent(formData.topic)}&tier=${selectedTier}`);
           const data = await response.json();
           
           if (data.checkout_url) {
@@ -398,6 +398,10 @@
         } catch (err) {
           setError('Payment failed. Please try again.');
         }
+      };
+
+      const handleGenerateClick = () => {
+        setStep('pricing');
       };
 
       if (loading) {
