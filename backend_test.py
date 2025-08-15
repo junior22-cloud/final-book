@@ -15,6 +15,7 @@ class WizBookTester:
         self.critical_failures = []
         self.minor_issues = []
         self.generated_book_ids = []  # Track generated books for cleanup
+        self.launch_readiness_issues = []  # Track launch-critical issues
 
     def run_test(self, name, method, endpoint, expected_status, params=None, json_data=None, timeout=60, headers=None):
         """Run a single API test"""
