@@ -18,8 +18,10 @@ class WizBookTester:
         """Run a single API test"""
         if endpoint.startswith('http'):
             url = endpoint
+        elif endpoint == "":
+            url = f"{self.api_url}/"  # Health check endpoint
         else:
-            url = f"{self.api_url}/{endpoint}" if endpoint else self.api_url
+            url = f"{self.api_url}/{endpoint}"
         
         self.tests_run += 1
         print(f"\n🔍 Testing {name}...")
