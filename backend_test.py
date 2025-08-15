@@ -269,42 +269,50 @@ class WizBookTester:
         
         return success and pdf_success
 
-    def test_stripe_checkout(self):
-        """Test GET /api/checkout?topic=Python Programming - Stripe payment flow"""
+    def test_pricing_system(self):
+        """Test GET /api/pricing - Premium pricing system"""
         print("\n" + "="*60)
-        print("💳 STRIPE CHECKOUT TESTS")
+        print("💰 PRICING SYSTEM TESTS")
         print("="*60)
         
         success, response = self.run_test(
-            "Stripe Checkout - Python Programming", 
+            "Pricing Tiers", 
             "GET", 
-            "checkout", 
-            200,
-            params={"topic": "Python Programming"},
-            timeout=60
-        )
-        
-        if success and isinstance(response, dict):
-            required_fields = ['checkout_url', 'session_id']
-            missing_fields = [field for field in required_fields if field not in response]
-            if missing_fields:
-                self.minor_issues.append(f"Checkout response missing fields: {missing_fields}")
-            else:
-                print(f"   Checkout URL: {response.get('checkout_url')}")
-                print(f"   Session ID: {response.get('session_id')}")
-                if response.get('demo'):
-                    print("   ⚠️  Demo mode detected (Stripe keys not configured)")
-                    self.minor_issues.append("Stripe running in demo mode")
-        
-        # Test default topic
-        print("\n🔍 Testing Default Topic...")
-        default_success, default_response = self.run_test(
-            "Stripe Checkout - Default Topic", 
-            "GET", 
-            "checkout", 
+            "pricing", 
             200,
             timeout=30
         )
+        
+        if success and isinstance(response, dict):
+            if 'tiers' in response:
+                tiers = response['tiers']
+                print(f"   Available Tiers: {len(tiers)}")
+                
+                expected_tiers = ["basic", "pro", "premium"]
+                found_tiers = [tier.get('id') for tier in tiers]
+                
+                for expected_tier in expected_tiers:
+                    if expected_tier not in found_tiers:
+                        self.minor_issues.append(f"Missing expected pricing tier: {expected_tier}")
+                
+                # Validate tier structure
+                for tier in tiers:
+                    required_fields = ['id', 'name', 'price', 'description', 'features']
+                    missing_fields = [field for field in required_fields if field not in tier]
+                    if missing_fields:
+                        self.minor_issues.append(f"Tier {tier.get('id', 'unknown')} missing fields: {missing_fields}")
+                    else:
+                        print(f"   {tier['name']}: ${tier['price']} - {tier['description']}")
+                        print(f"     Features: {len(tier['features'])} items")
+                
+                # Validate pricing logic
+                prices = [tier.get('price', 0) for tier in tiers if tier.get('id') in expected_tiers]
+                if len(prices) >= 3 and not (prices[0] < prices[1] < prices[2]):
+                    self.minor_issues.append("Pricing tiers not in ascending order")
+                    
+            else:
+                self.critical_failures.append("Pricing endpoint missing 'tiers' field")
+                success = False
         
         return success
 
