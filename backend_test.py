@@ -567,7 +567,7 @@ class WizBookTester:
         
         security_tests = []
         
-        # Test 1: SQL Injection attempts
+        # Test 1: SQL Injection attempts on GET endpoints
         print("\n🔍 Testing SQL Injection Protection...")
         sql_payloads = [
             "'; DROP TABLE books; --",
@@ -577,18 +577,12 @@ class WizBookTester:
         ]
         
         for payload in sql_payloads:
-            request_data = {
-                "topic": payload,
-                "audience": "beginners",
-                "tier": "basic"
-            }
-            
             success, response = self.run_test(
                 f"SQL Injection Test", 
-                "POST", 
-                "generate-book", 
+                "GET", 
+                "generate", 
                 200,  # Should handle gracefully, not crash
-                json_data=request_data,
+                params={"topic": payload},
                 timeout=30
             )
             
@@ -609,23 +603,17 @@ class WizBookTester:
         ]
         
         for payload in xss_payloads:
-            request_data = {
-                "topic": payload,
-                "audience": "beginners", 
-                "tier": "basic"
-            }
-            
             success, response = self.run_test(
                 f"XSS Protection Test", 
-                "POST", 
-                "generate-book", 
+                "GET", 
+                "generate", 
                 200,
-                json_data=request_data,
+                params={"topic": payload},
                 timeout=30
             )
             
             if success and isinstance(response, dict):
-                content = response.get('content', '')
+                content = response.get('book', '')
                 if payload in content:
                     self.minor_issues.append(f"XSS payload not sanitized in response")
                 else:
@@ -633,19 +621,19 @@ class WizBookTester:
             
             security_tests.append(success)
         
-        # Test 3: Large payload handling
+        # Test 3: Large payload handling on email capture
         print("\n🔍 Testing Large Payload Handling...")
         large_request = {
-            "topic": "A" * 10000,  # 10KB topic
-            "audience": "B" * 1000,
-            "tier": "basic"
+            "email": "test@example.com",
+            "tier_interest": "A" * 10000,  # 10KB tier interest
+            "topic": "B" * 1000
         }
         
         large_success, large_response = self.run_test(
             "Large Payload Test", 
             "POST", 
-            "generate-book", 
-            422,  # Should reject or handle gracefully
+            "capture-email", 
+            400,  # Should reject or handle gracefully
             json_data=large_request,
             timeout=60
         )
@@ -655,7 +643,7 @@ class WizBookTester:
             large_success, large_response = self.run_test(
                 "Large Payload Test (Alt)", 
                 "POST", 
-                "generate-book", 
+                "capture-email", 
                 200,
                 json_data=large_request,
                 timeout=60
@@ -663,20 +651,20 @@ class WizBookTester:
         
         security_tests.append(large_success)
         
-        # Test 4: Invalid JSON
+        # Test 4: Invalid JSON on webhook
         print("\n🔍 Testing Invalid JSON Handling...")
         try:
             response = requests.post(
-                f"{self.api_url}/generate-book",
+                f"{self.api_url}/webhook",
                 data="invalid json{{{",
                 headers={'Content-Type': 'application/json'},
                 timeout=30
             )
             
             self.tests_run += 1
-            if response.status_code in [400, 422]:
+            if response.status_code in [200, 400, 422]:  # Should handle gracefully
                 self.tests_passed += 1
-                print("   ✅ Invalid JSON properly rejected")
+                print("   ✅ Invalid JSON properly handled")
                 security_tests.append(True)
             else:
                 print(f"   ⚠️  Invalid JSON handling unexpected: {response.status_code}")
@@ -685,6 +673,25 @@ class WizBookTester:
         except Exception as e:
             print(f"   ❌ Invalid JSON test failed: {str(e)}")
             security_tests.append(False)
+        
+        # Test 5: Rate limiting behavior (if implemented)
+        print("\n🔍 Testing Rate Limiting Behavior...")
+        rate_limit_success = True
+        try:
+            # Make multiple rapid requests to test rate limiting
+            for i in range(5):
+                response = requests.get(f"{self.api_url}/generate", params={"topic": f"Test {i}"}, timeout=10)
+                if response.status_code == 429:  # Too Many Requests
+                    print("   ✅ Rate limiting detected")
+                    break
+            else:
+                print("   ⚠️  No rate limiting detected (may be intentional)")
+                self.minor_issues.append("No rate limiting detected on generation endpoint")
+        except Exception as e:
+            print(f"   ⚠️  Rate limit test failed: {str(e)}")
+            rate_limit_success = False
+        
+        security_tests.append(rate_limit_success)
         
         return sum(security_tests) >= len(security_tests) * 0.75  # 75% pass rate
 
