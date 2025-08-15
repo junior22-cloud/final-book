@@ -19,12 +19,12 @@ app = FastAPI(title="BookWiz Generator", version="1.0")
 # Configure services
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY', 'sk_test_placeholder')
 
-# CORS for frontend
+# CORS for frontend - Production optimized
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://wizbook.io", "http://localhost:8001", "http://127.0.0.1:8001"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
