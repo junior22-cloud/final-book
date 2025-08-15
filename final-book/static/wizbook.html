@@ -612,7 +612,7 @@
               <div style={{textAlign: 'center'}}>
                 <button 
                   className="btn btn-primary" 
-                  onClick={handlePayment}
+                  onClick={handlePricingContinue}
                   style={{
                     fontSize: '1.3rem', 
                     padding: '25px 60px', 
@@ -621,7 +621,7 @@
                     boxShadow: '0 8px 25px rgba(102, 126, 234, 0.4)'
                   }}
                 >
-                  {selectedTier === 'whitelabel' ? '🚀 Start Business License' : '💎 Get Premium Book'} - ${pricingTiers[selectedTier].price}
+                  {selectedTier === 'whitelabel' ? '🚀 Get Business License' : '💎 Continue to Checkout'} - ${pricingTiers[selectedTier].price}
                 </button>
                 <button 
                   className="btn" 
@@ -629,6 +629,136 @@
                   style={{fontSize: '1rem', padding: '20px 35px', background: '#f3f4f6', color: '#374151'}}
                 >
                   ← Back
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (step === 'upsells') {
+        const recommendedUpsells = getRecommendedUpsells();
+        const totalUpsellPrice = selectedUpsells.reduce((sum, id) => sum + upsells[id].price, 0);
+        const finalPrice = pricingTiers[selectedTier].price + totalUpsellPrice;
+
+        return (
+          <div className="container">
+            <div className="card">
+              <div style={{textAlign: 'center', marginBottom: '30px'}}>
+                <h2 style={{color: '#1f2937', fontSize: '2.2rem', marginBottom: '10px'}}>
+                  🚀 Boost Your Book's Impact
+                </h2>
+                <p style={{color: '#6b7280', fontSize: '1.1rem'}}>
+                  Selected: <strong>{pricingTiers[selectedTier].name}</strong> (${pricingTiers[selectedTier].price})
+                </p>
+                <div style={{background: '#f59e0b', color: 'white', padding: '8px 20px', borderRadius: '20px', display: 'inline-block', fontSize: '0.9rem', fontWeight: 'bold', marginTop: '10px'}}>
+                  LIMITED TIME: Save up to 40% on add-ons
+                </div>
+              </div>
+
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginBottom: '40px'}}>
+                {recommendedUpsells.map(upsellId => {
+                  const upsell = upsells[upsellId];
+                  const isSelected = selectedUpsells.includes(upsellId);
+                  
+                  return (
+                    <div
+                      key={upsellId}
+                      onClick={() => toggleUpsell(upsellId)}
+                      style={{
+                        border: isSelected ? '3px solid #10b981' : '2px solid #e5e7eb',
+                        borderRadius: '16px',
+                        padding: '25px',
+                        cursor: 'pointer',
+                        background: isSelected ? 'rgba(16, 185, 129, 0.05)' : 'white',
+                        transition: 'all 0.3s ease',
+                        position: 'relative'
+                      }}
+                    >
+                      {isSelected && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '15px',
+                          right: '15px',
+                          background: '#10b981',
+                          color: 'white',
+                          borderRadius: '50%',
+                          width: '24px',
+                          height: '24px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.8rem'
+                        }}>
+                          ✓
+                        </div>
+                      )}
+
+                      <h3 style={{fontSize: '1.4rem', marginBottom: '10px', color: '#1f2937'}}>{upsell.title}</h3>
+                      
+                      <div style={{display: 'flex', alignItems: 'center', marginBottom: '15px'}}>
+                        <span style={{fontSize: '2rem', fontWeight: 'bold', color: '#10b981'}}>
+                          ${upsell.price}
+                        </span>
+                        {upsell.originalPrice && (
+                          <span style={{fontSize: '1.2rem', color: '#9ca3af', textDecoration: 'line-through', marginLeft: '10px'}}>
+                            ${upsell.originalPrice}
+                          </span>
+                        )}
+                      </div>
+
+                      <p style={{color: '#6b7280', marginBottom: '20px', fontSize: '1rem'}}>
+                        {upsell.description}
+                      </p>
+
+                      <ul style={{listStyle: 'none', padding: 0}}>
+                        {upsell.features.map((feature, index) => (
+                          <li key={index} style={{padding: '6px 0', color: '#374151', display: 'flex', alignItems: 'center'}}>
+                            <span style={{color: '#10b981', marginRight: '10px'}}>✓</span>
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{textAlign: 'center', background: '#f8fafc', padding: '25px', borderRadius: '12px', marginBottom: '30px'}}>
+                <h3 style={{color: '#1f2937', marginBottom: '15px'}}>📊 Your Order Summary</h3>
+                <div style={{fontSize: '1.1rem', color: '#6b7280', marginBottom: '10px'}}>
+                  {pricingTiers[selectedTier].name}: ${pricingTiers[selectedTier].price}
+                </div>
+                {selectedUpsells.map(id => (
+                  <div key={id} style={{fontSize: '1rem', color: '#6b7280', marginBottom: '5px'}}>
+                    + {upsells[id].title}: ${upsells[id].price}
+                  </div>
+                ))}
+                <hr style={{margin: '15px 0', border: '1px solid #e5e7eb'}} />
+                <div style={{fontSize: '1.8rem', fontWeight: 'bold', color: '#1f2937'}}>
+                  Total: ${finalPrice}
+                  {totalUpsellPrice > 0 && (
+                    <span style={{fontSize: '1.2rem', color: '#10b981', marginLeft: '10px'}}>
+                      (Save ${(recommendedUpsells.reduce((sum, id) => sum + (upsells[id].originalPrice || upsells[id].price), 0) - (pricingTiers[selectedTier].price + totalUpsellPrice)).toFixed(2)})
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div style={{textAlign: 'center'}}>
+                <button 
+                  className="btn btn-primary" 
+                  onClick={handlePayment}
+                  style={{fontSize: '1.3rem', padding: '25px 60px', marginRight: '20px'}}
+                >
+                  💳 Complete Order - ${finalPrice}
+                </button>
+                <button 
+                  className="btn" 
+                  onClick={() => setStep('pricing')}
+                  style={{fontSize: '1rem', padding: '20px 35px', background: '#f3f4f6', color: '#374151'}}
+                >
+                  ← Back to Pricing
                 </button>
               </div>
             </div>
