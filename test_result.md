@@ -292,6 +292,18 @@ frontend:
         agent: "testing"
         comment: "CRITICAL: Entire pricing flow non-functional. Form elements not found, Create My Book button missing, pricing cards not interactive. React-based pricing system completely broken due to CDN dependency failure."
 
+  - task: "Simplified Button System with redirectToPayment()"
+    implemented: true
+    working: false
+    file: "final-book/static/index.html"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL DEPLOYMENT ISSUE: Live URL https://final-book-production.up.railway.app returns blank page - deployment not working. CODE ANALYSIS: ✅ redirectToPayment() function correctly implemented with proper validation (checks empty topic, shows alert, focuses input). ✅ All three pricing tiers configured (basic $47, pro $97, whitelabel $497) with correct onclick handlers. ✅ Proper URL construction (/api/checkout?topic=X&tier=Y). ❌ Cannot test actual functionality due to deployment failure. RECOMMENDATION: Fix deployment to enable live testing."
+
 metadata:
   created_by: "main_agent"
   version: "2.0"
