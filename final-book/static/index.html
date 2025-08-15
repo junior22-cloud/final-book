@@ -525,26 +525,65 @@
       document.getElementById('pricingSection').style.display = 'none';
     }
 
-    // Tier selection
-    function selectTier(tier) {
-      selectedTier = tier;
-      
-      // Clear previous selections
-      document.querySelectorAll('.pricing-card').forEach(card => {
-        card.classList.remove('selected');
-      });
-      
-      // Select current tier
-      event.currentTarget.classList.add('selected');
-      
-      // Simulate checkout (in production, this would call the API)
-      const prices = { basic: 47, pro: 97, whitelabel: 497 };
-      const topic = document.getElementById('selectedTopic').textContent;
-      
-      setTimeout(() => {
-        const confirmText = `Selected: ${tier.toUpperCase()} - $${prices[tier]}\nTopic: ${topic}\n\nIn production, this redirects to:\n/api/checkout?topic=${encodeURIComponent(topic)}&tier=${tier}`;
-        alert(confirmText);
-      }, 300);
+    // Tier selection with real checkout API
+    async function selectTier(tier) {
+      try {
+        selectedTier = tier;
+        
+        // Get the topic from the form
+        const topic = document.getElementById('selectedTopic').textContent;
+        if (!topic || topic.trim() === '') {
+          alert('Please enter a book topic first!');
+          return;
+        }
+        
+        // Clear previous selections
+        document.querySelectorAll('.pricing-card').forEach(card => {
+          card.classList.remove('selected');
+        });
+        
+        // Select current tier
+        event.currentTarget.classList.add('selected');
+        
+        // Show loading state
+        const loadingMsg = document.createElement('div');
+        loadingMsg.id = 'checkout-loading';
+        loadingMsg.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:30px;border-radius:15px;box-shadow:0 10px 30px rgba(0,0,0,0.3);z-index:9999;text-align:center;color:#333;';
+        loadingMsg.innerHTML = `<h3 style="margin:0 0 10px 0;">🚀 Processing ${tier.toUpperCase()} Package</h3><p style="margin:0;">Preparing your checkout...</p>`;
+        document.body.appendChild(loadingMsg);
+        
+        // Call your backend API
+        const response = await fetch(`/api/checkout?topic=${encodeURIComponent(topic)}&tier=${encodeURIComponent(tier)}`);
+        const data = await response.json();
+
+        // Remove loading message
+        const loading = document.getElementById('checkout-loading');
+        if (loading) loading.remove();
+
+        if (data.checkout_url) {
+          // Redirect user to the checkout page
+          window.location.href = data.checkout_url;
+        } else if (data.demo) {
+          // Demo mode - show what would happen
+          const demoMsg = `✅ CHECKOUT READY!\n\n` +
+                         `📖 Topic: ${topic}\n` +
+                         `💎 Tier: ${tier.toUpperCase()}\n` +
+                         `💰 Price: $${data.price}\n\n` +
+                         `🔧 DEMO MODE: Add STRIPE_SECRET_KEY to your Railway environment variables to enable real Stripe checkout.\n\n` +
+                         `📍 Would redirect to: ${data.checkout_url}`;
+          alert(demoMsg);
+        } else {
+          alert('Checkout URL not found!');
+        }
+        
+      } catch (err) {
+        // Remove loading message
+        const loading = document.getElementById('checkout-loading');
+        if (loading) loading.remove();
+        
+        console.error('Checkout error:', err);
+        alert('Failed to fetch checkout. Please try again or check your internet connection.');
+      }
     }
 
     // Email capture functions
