@@ -85,11 +85,11 @@ class WizBookTester:
         
         success, response = self.run_test("Health Check", "GET", "", 200)
         if success and isinstance(response, dict):
-            if 'service' in response and 'status' in response:
-                print(f"   Service: {response.get('service')}")
+            if 'message' in response and 'status' in response:
+                print(f"   Message: {response.get('message')}")
                 print(f"   Status: {response.get('status')}")
             else:
-                self.minor_issues.append("Health check missing expected fields")
+                self.minor_issues.append("Health check missing expected fields (message, status)")
         return success
 
     def test_ai_generation(self):
