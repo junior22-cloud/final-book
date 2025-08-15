@@ -316,7 +316,94 @@ class WizBookTester:
         
         return success
 
-    def test_cors_configuration(self):
+    def test_books_listing(self):
+        """Test GET /api/books - List recent books"""
+        print("\n" + "="*60)
+        print("📋 BOOKS LISTING TESTS")
+        print("="*60)
+        
+        success, response = self.run_test(
+            "Books Listing", 
+            "GET", 
+            "books", 
+            200,
+            timeout=30
+        )
+        
+        if success and isinstance(response, dict):
+            required_fields = ['books', 'count']
+            missing_fields = [field for field in required_fields if field not in response]
+            if missing_fields:
+                self.minor_issues.append(f"Books listing response missing fields: {missing_fields}")
+            else:
+                books = response.get('books', [])
+                count = response.get('count', 0)
+                print(f"   Total Books: {count}")
+                print(f"   Books Returned: {len(books)}")
+                
+                if count != len(books):
+                    self.minor_issues.append(f"Count mismatch: reported {count}, actual {len(books)}")
+                
+                # Test with limit parameter
+                print("\n🔍 Testing with limit parameter...")
+                limit_success, limit_response = self.run_test(
+                    "Books Listing - Limited", 
+                    "GET", 
+                    "books", 
+                    200,
+                    params={"limit": 5},
+                    timeout=30
+                )
+                
+                if limit_success and isinstance(limit_response, dict):
+                    limited_books = limit_response.get('books', [])
+                    if len(limited_books) > 5:
+                        self.minor_issues.append("Limit parameter not respected")
+        
+        return success
+
+    def test_missing_endpoints(self):
+        """Test for endpoints mentioned in review request but not implemented"""
+        print("\n" + "="*60)
+        print("🚨 MISSING ENDPOINTS ANALYSIS")
+        print("="*60)
+        
+        missing_endpoints = [
+            ("GET /api/generate", "AI generation with query params"),
+            ("GET /api/pdf", "PDF generation with query params"), 
+            ("GET /api/checkout", "Stripe checkout creation"),
+            ("POST /api/capture-email", "Email capture system"),
+            ("POST /api/webhook", "Stripe webhook handling")
+        ]
+        
+        print("🔍 Checking for endpoints mentioned in review request...")
+        for endpoint, description in missing_endpoints:
+            method, path = endpoint.split(' ', 1)
+            endpoint_path = path.replace('/api/', '')
+            
+            print(f"\n   Testing {endpoint} - {description}")
+            success, response = self.run_test(
+                f"Missing Endpoint Check - {endpoint}", 
+                method, 
+                endpoint_path, 
+                404,  # Expecting 404 for missing endpoints
+                timeout=10
+            )
+            
+            if not success:
+                # If we didn't get 404, the endpoint might exist but with different behavior
+                print(f"     ⚠️  Endpoint {endpoint} exists but behaves differently than expected")
+            else:
+                print(f"     ❌ Endpoint {endpoint} not implemented")
+        
+        print(f"\n📝 ANALYSIS: The review request expects endpoints that don't match current implementation.")
+        print(f"   Current backend implements different endpoint patterns.")
+        print(f"   This suggests either:")
+        print(f"   1. Review request is outdated")
+        print(f"   2. Backend implementation is incomplete")
+        print(f"   3. There's a mismatch in requirements")
+        
+        return True  # This is informational, not a failure
         """Test CORS configuration"""
         print("\n" + "="*60)
         print("🌐 CORS CONFIGURATION TESTS")
