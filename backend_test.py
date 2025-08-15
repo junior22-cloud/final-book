@@ -78,6 +78,61 @@ class WizBookTester:
             self.critical_failures.append(f"{name}: {error_msg}")
             return False, {}
 
+    def test_api_keys_loading(self):
+        """Test if API keys are properly loaded from environment - LAUNCH CRITICAL"""
+        print("\n" + "="*60)
+        print("🔑 API KEYS LOADING TEST - LAUNCH CRITICAL")
+        print("="*60)
+        
+        # Test 1: Check if AI generation works (indicates EMERGENT_LLM_KEY is loaded)
+        print("\n🔍 Testing EMERGENT_LLM_KEY loading via AI generation...")
+        success, response = self.run_test(
+            "API Key Test - EMERGENT_LLM_KEY", 
+            "GET", 
+            "generate", 
+            200,
+            params={"topic": "API Key Test Topic"},
+            timeout=60
+        )
+        
+        if success and isinstance(response, dict):
+            book_content = response.get('book', '')
+            if len(book_content) > 100 and 'API Key Test Topic' in book_content:
+                print("   ✅ EMERGENT_LLM_KEY loaded and working")
+            else:
+                self.launch_readiness_issues.append("EMERGENT_LLM_KEY may not be working properly - AI generation returned minimal content")
+                print("   ⚠️  EMERGENT_LLM_KEY may not be working - minimal content generated")
+        else:
+            self.launch_readiness_issues.append("EMERGENT_LLM_KEY not working - AI generation failed")
+            print("   ❌ EMERGENT_LLM_KEY not working - AI generation failed")
+        
+        # Test 2: Check if Stripe checkout works (indicates STRIPE_SECRET_KEY is loaded)
+        print("\n🔍 Testing STRIPE_SECRET_KEY loading via checkout...")
+        stripe_success, stripe_response = self.run_test(
+            "API Key Test - STRIPE_SECRET_KEY", 
+            "GET", 
+            "checkout", 
+            200,
+            params={"topic": "Test Topic", "tier": "pro"},
+            timeout=30
+        )
+        
+        if stripe_success and isinstance(stripe_response, dict):
+            if 'checkout_url' in stripe_response:
+                if stripe_response.get('demo'):
+                    print("   ⚠️  STRIPE_SECRET_KEY in demo mode - may need real keys for production")
+                    self.launch_readiness_issues.append("STRIPE_SECRET_KEY in demo mode - needs real keys for production launch")
+                else:
+                    print("   ✅ STRIPE_SECRET_KEY loaded and working")
+            else:
+                self.launch_readiness_issues.append("STRIPE_SECRET_KEY not working - checkout failed")
+                print("   ❌ STRIPE_SECRET_KEY not working - checkout failed")
+        else:
+            self.launch_readiness_issues.append("STRIPE_SECRET_KEY not working - checkout endpoint failed")
+            print("   ❌ STRIPE_SECRET_KEY not working - checkout endpoint failed")
+        
+        return success and stripe_success
+
     def test_health_check(self):
         """Test GET /api/ - Health check"""
         print("\n" + "="*60)
