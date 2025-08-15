@@ -322,11 +322,26 @@
       const [result, setResult] = useState(null);
       const [error, setError] = useState('');
 
-      // Pricing tiers
+      // Premium Pricing Tiers
       const pricingTiers = {
-        basic: { price: 14.97, name: 'Basic', chapters: '5', features: ['AI-Generated Book', 'PDF Download', 'Standard Quality'] },
-        pro: { price: 24.97, name: 'Professional', chapters: '8', features: ['AI-Generated Book', 'Premium PDF', 'Commercial Rights', '⭐ BEST VALUE'] },
-        premium: { price: 49.97, name: 'Premium', chapters: '12', features: ['AI-Generated Book', 'Premium PDF', 'Commercial Rights', '3 Bonus Templates', 'Priority Support'] }
+        basic: { 
+          price: 47, 
+          name: 'Basic', 
+          delivery: '24hr delivery',
+          features: ['AI-generated PDF', 'Standard cover', 'Watermarked footer', '24hr delivery'] 
+        },
+        pro: { 
+          price: 97, 
+          name: 'Professional', 
+          delivery: '12hr delivery',
+          features: ['Everything in Basic', 'Audio narration (AI)', 'Editable DOCX', '3 premium covers', '12hr delivery', '⭐ MOST POPULAR'] 
+        },
+        whitelabel: { 
+          price: 497, 
+          name: 'White Label', 
+          delivery: 'Instant access',
+          features: ['Everything in Pro', 'Remove branding', 'Commercial rights', '100 books/month license', '🚀 BUSINESS SOLUTION'] 
+        }
       };
 
       // Auto-detect API URL - PRODUCTION READY
