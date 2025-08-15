@@ -643,31 +643,29 @@
       }
     }
 
-    // Simplified Payment Redirect Function
-    function redirectToPayment(tier = null) {
-      // Simple validation - ensure topic is entered
-      const topic = document.getElementById('topic').value;
-      if (!topic || topic.trim() === '') {
-        alert("Please enter a book topic first!");
-        document.getElementById('topic').focus();
-        return;
-      }
+    // Your handleCheckout function - works with current JSON backend
+    async function handleCheckout(topic, tier) {
+        try {
+            // Validate topic
+            if (!topic || topic.trim() === '') {
+                alert('Please enter a book topic first!');
+                return;
+            }
 
-      // If no tier specified, show pricing first
-      if (!tier) {
-        showPricing();
-        return;
-      }
+            // Call your backend API
+            const response = await fetch(`/api/checkout?topic=${encodeURIComponent(topic)}&tier=${encodeURIComponent(tier)}`);
+            const data = await response.json();
 
-      // DIRECTLY go to checkout with topic and tier
-      const encodedTopic = encodeURIComponent(topic.trim());
-      window.location.href = `/api/checkout?topic=${encodedTopic}&tier=${tier}`;
-    }
-
-    // Helper function for topic validation
-    function hasValidTopic() {
-      const topic = document.getElementById('topic').value;
-      return topic && topic.trim() !== '';
+            if (data.checkout_url) {
+                // Redirect user to the checkout page
+                window.location.href = data.checkout_url;
+            } else {
+                alert('Checkout URL not found!');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Failed to fetch checkout. Check console for details.');
+        }
     }
 
     // Error handling
