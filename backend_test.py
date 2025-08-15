@@ -4,6 +4,7 @@ import json
 import time
 import concurrent.futures
 from datetime import datetime
+import uuid
 
 class WizBookTester:
     def __init__(self, base_url="https://6c01608b-cf88-4ee1-bbbe-13267a9381af.preview.emergentagent.com"):
@@ -13,6 +14,7 @@ class WizBookTester:
         self.tests_passed = 0
         self.critical_failures = []
         self.minor_issues = []
+        self.generated_book_ids = []  # Track generated books for cleanup
 
     def run_test(self, name, method, endpoint, expected_status, params=None, timeout=60):
         """Run a single API test"""
