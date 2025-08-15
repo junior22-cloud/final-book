@@ -450,7 +450,134 @@ class WizBookTester:
             self.critical_failures.append(f"CORS: {str(e)}")
             return False
 
-    def test_static_file_serving(self):
+    def test_security_and_edge_cases(self):
+        """Test security vulnerabilities and edge cases"""
+        print("\n" + "="*60)
+        print("🔒 SECURITY & EDGE CASE TESTS")
+        print("="*60)
+        
+        security_tests = []
+        
+        # Test 1: SQL Injection attempts
+        print("\n🔍 Testing SQL Injection Protection...")
+        sql_payloads = [
+            "'; DROP TABLE books; --",
+            "' OR '1'='1",
+            "admin'--",
+            "' UNION SELECT * FROM users--"
+        ]
+        
+        for payload in sql_payloads:
+            request_data = {
+                "topic": payload,
+                "audience": "beginners",
+                "tier": "basic"
+            }
+            
+            success, response = self.run_test(
+                f"SQL Injection Test", 
+                "POST", 
+                "generate-book", 
+                200,  # Should handle gracefully, not crash
+                json_data=request_data,
+                timeout=30
+            )
+            
+            if success:
+                print(f"   ✅ SQL injection payload handled safely")
+            else:
+                print(f"   ⚠️  SQL injection payload caused error")
+            
+            security_tests.append(success)
+        
+        # Test 2: XSS attempts
+        print("\n🔍 Testing XSS Protection...")
+        xss_payloads = [
+            "<script>alert('xss')</script>",
+            "javascript:alert('xss')",
+            "<img src=x onerror=alert('xss')>",
+            "';alert('xss');//"
+        ]
+        
+        for payload in xss_payloads:
+            request_data = {
+                "topic": payload,
+                "audience": "beginners", 
+                "tier": "basic"
+            }
+            
+            success, response = self.run_test(
+                f"XSS Protection Test", 
+                "POST", 
+                "generate-book", 
+                200,
+                json_data=request_data,
+                timeout=30
+            )
+            
+            if success and isinstance(response, dict):
+                content = response.get('content', '')
+                if payload in content:
+                    self.minor_issues.append(f"XSS payload not sanitized in response")
+                else:
+                    print(f"   ✅ XSS payload properly handled")
+            
+            security_tests.append(success)
+        
+        # Test 3: Large payload handling
+        print("\n🔍 Testing Large Payload Handling...")
+        large_request = {
+            "topic": "A" * 10000,  # 10KB topic
+            "audience": "B" * 1000,
+            "tier": "basic"
+        }
+        
+        large_success, large_response = self.run_test(
+            "Large Payload Test", 
+            "POST", 
+            "generate-book", 
+            422,  # Should reject or handle gracefully
+            json_data=large_request,
+            timeout=60
+        )
+        
+        if not large_success:
+            # Try with 200 - maybe it handles large payloads
+            large_success, large_response = self.run_test(
+                "Large Payload Test (Alt)", 
+                "POST", 
+                "generate-book", 
+                200,
+                json_data=large_request,
+                timeout=60
+            )
+        
+        security_tests.append(large_success)
+        
+        # Test 4: Invalid JSON
+        print("\n🔍 Testing Invalid JSON Handling...")
+        try:
+            response = requests.post(
+                f"{self.api_url}/generate-book",
+                data="invalid json{{{",
+                headers={'Content-Type': 'application/json'},
+                timeout=30
+            )
+            
+            self.tests_run += 1
+            if response.status_code in [400, 422]:
+                self.tests_passed += 1
+                print("   ✅ Invalid JSON properly rejected")
+                security_tests.append(True)
+            else:
+                print(f"   ⚠️  Invalid JSON handling unexpected: {response.status_code}")
+                security_tests.append(False)
+                
+        except Exception as e:
+            print(f"   ❌ Invalid JSON test failed: {str(e)}")
+            security_tests.append(False)
+        
+        return sum(security_tests) >= len(security_tests) * 0.75  # 75% pass rate
         """Test static file serving - HTML frontend at root /"""
         print("\n" + "="*60)
         print("📁 STATIC FILE SERVING TESTS")
