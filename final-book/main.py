@@ -375,16 +375,23 @@ async def stripe_webhook(request: Request):
             # Extract metadata
             topic = session.get('metadata', {}).get('topic', 'Unknown')
             tier = session.get('metadata', {}).get('tier', 'basic')
+            upsells = session.get('metadata', {}).get('upsells', '')
             customer_email = session.get('customer_details', {}).get('email', 'unknown@email.com')
+            amount_total = session.get('amount_total', 0) / 100  # Convert cents to dollars
             
-            # Log successful purchase (you can save to database here)
-            print(f"✅ SALE: {customer_email} bought {tier} plan for {topic}")
+            # Log successful purchase with upsells
+            upsell_list = upsells.split(',') if upsells else []
+            print(f"✅ SALE: {customer_email} bought {tier} plan for '{topic}'")
+            print(f"💰 Amount: ${amount_total}")
+            if upsell_list:
+                print(f"🚀 Upsells: {', '.join(upsell_list)}")
             
             # Here you would:
-            # 1. Generate the actual book
-            # 2. Send email with download links
-            # 3. Save to database
-            # 4. Send to fulfillment system
+            # 1. Generate the actual book based on tier + upsells
+            # 2. Apply upsell features (formatting, print-ready, rush delivery, etc.)
+            # 3. Send email with download links
+            # 4. Save to database with upsell details
+            # 5. Send to fulfillment system
             
         return {"status": "success"}
         
