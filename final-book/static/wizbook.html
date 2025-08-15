@@ -614,6 +614,8 @@
       const [step, setStep] = useState('home'); // home, pricing, upsells, generate, result
       const [selectedTier, setSelectedTier] = useState('pro');
       const [selectedUpsells, setSelectedUpsells] = useState([]);
+      const [showEmailPopup, setShowEmailPopup] = useState(false);
+      const [email, setEmail] = useState('');
       const [formData, setFormData] = useState({
         topic: '',
         audience: 'beginners',
@@ -682,6 +684,62 @@
       const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
         ? 'http://localhost:8001'  // Local development
         : 'https://wizbook.io';  // PRODUCTION DOMAIN - LIVE!
+
+      // Email capture on exit intent
+      useEffect(() => {
+        let timer;
+        const handleExitIntent = (e) => {
+          if (e.clientY <= 0 && !showEmailPopup && !localStorage.getItem('wizbook_email_captured')) {
+            setShowEmailPopup(true);
+          }
+        };
+
+        // Show email popup after 30 seconds on pricing page
+        if (step === 'pricing') {
+          timer = setTimeout(() => {
+            if (!showEmailPopup && !localStorage.getItem('wizbook_email_captured')) {
+              setShowEmailPopup(true);
+            }
+          }, 30000);
+        }
+
+        document.addEventListener('mouseleave', handleExitIntent);
+        return () => {
+          document.removeEventListener('mouseleave', handleExitIntent);
+          if (timer) clearTimeout(timer);
+        };
+      }, [step, showEmailPopup]);
+
+      const handleEmailCapture = async (e) => {
+        e.preventDefault();
+        if (!email || !email.includes('@')) {
+          setError('Please enter a valid email address');
+          return;
+        }
+
+        try {
+          const response = await fetch(`${API_URL}/api/capture-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              email, 
+              tier_interest: selectedTier,
+              topic: formData.topic 
+            })
+          });
+
+          if (response.ok) {
+            localStorage.setItem('wizbook_email_captured', 'true');
+            setShowEmailPopup(false);
+            // Show success message
+            alert('✅ You\'re on the list! We\'ll email you before prices increase.');
+          }
+        } catch (err) {
+          console.error('Email capture failed:', err);
+          // Still close popup to not annoy user
+          setShowEmailPopup(false);
+        }
+      };
 
       const handleGenerate = async () => {
         if (!formData.topic.trim()) {
