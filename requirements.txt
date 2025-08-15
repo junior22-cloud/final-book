@@ -2,7 +2,6 @@
 fastapi==0.110.1
 uvicorn==0.25.0
 python-dotenv>=1.0.1
-# emergentintegrations   <-- Removed because it is not on PyPI
 python-multipart>=0.0.9
 reportlab>=4.0.0
 stripe>=5.0.0
