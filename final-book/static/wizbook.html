@@ -512,6 +512,48 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
+    // Countdown Timer Logic
+    const deadline = new Date();
+    deadline.setDate(deadline.getDate() + 5); // 5-day countdown
+
+    function CountdownBanner() {
+      const [timeLeft, setTimeLeft] = useState('');
+
+      useEffect(() => {
+        function updateTimer() {
+          const now = new Date();
+          const diff = deadline - now;
+          
+          if (diff > 0) {
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (days > 0) {
+              setTimeLeft(`${days} DAYS LEFT AT CURRENT PRICES`);
+            } else if (hours > 0) {
+              setTimeLeft(`${hours} HOURS LEFT AT CURRENT PRICES`);
+            } else {
+              setTimeLeft(`${minutes} MINUTES LEFT AT CURRENT PRICES`);
+            }
+          } else {
+            setTimeLeft('PRICES HAVE INCREASED!');
+          }
+        }
+
+        updateTimer(); // Initial call
+        const interval = setInterval(updateTimer, 1000);
+        return () => clearInterval(interval);
+      }, []);
+
+      return (
+        <div className="countdown-banner">
+          <h4>🔥 LIMITED TIME OFFER</h4>
+          <div className="countdown-timer">{timeLeft}</div>
+        </div>
+      );
+    }
+
     function WizBookApp() {
       const [step, setStep] = useState('home'); // home, pricing, upsells, generate, result
       const [selectedTier, setSelectedTier] = useState('pro');
