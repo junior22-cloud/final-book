@@ -311,7 +311,8 @@
     const { useState, useEffect } = React;
 
     function WizBookApp() {
-      const [step, setStep] = useState('home'); // home, generate, result
+      const [step, setStep] = useState('home'); // home, pricing, generate, result
+      const [selectedTier, setSelectedTier] = useState('pro');
       const [formData, setFormData] = useState({
         topic: '',
         audience: 'beginners',
@@ -320,6 +321,13 @@
       const [loading, setLoading] = useState(false);
       const [result, setResult] = useState(null);
       const [error, setError] = useState('');
+
+      // Pricing tiers
+      const pricingTiers = {
+        basic: { price: 14.97, name: 'Basic', chapters: '5', features: ['AI-Generated Book', 'PDF Download', 'Standard Quality'] },
+        pro: { price: 24.97, name: 'Professional', chapters: '8', features: ['AI-Generated Book', 'Premium PDF', 'Commercial Rights', '⭐ BEST VALUE'] },
+        premium: { price: 49.97, name: 'Premium', chapters: '12', features: ['AI-Generated Book', 'Premium PDF', 'Commercial Rights', '3 Bonus Templates', 'Priority Support'] }
+      };
 
       // Auto-detect API URL - PRODUCTION READY
       const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
