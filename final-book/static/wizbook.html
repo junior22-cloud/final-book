@@ -1125,6 +1125,49 @@
       return (
         <>
           <CountdownBanner />
+          
+          {/* Email Capture Popup */}
+          {showEmailPopup && (
+            <div className="email-popup">
+              <div className="email-popup-content">
+                <button 
+                  className="email-popup-close"
+                  onClick={() => setShowEmailPopup(false)}
+                >
+                  ×
+                </button>
+                
+                <h2 style={{color: '#1f2937', marginBottom: '15px'}}>⚠️ Don't Miss The Deadline!</h2>
+                <p style={{color: '#6b7280', marginBottom: '20px', fontSize: '1.1rem'}}>
+                  WizBook prices increase in <strong>5 days</strong>. Get notified before we raise prices!
+                </p>
+                
+                <form onSubmit={handleEmailCapture}>
+                  <input
+                    type="email"
+                    className="email-input"
+                    placeholder="Enter your email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                  
+                  <button 
+                    type="submit"
+                    className="btn btn-primary"
+                    style={{width: '100%', marginTop: '10px'}}
+                  >
+                    🔔 Notify Me Before Price Increase
+                  </button>
+                </form>
+                
+                <p style={{fontSize: '0.85rem', color: '#9ca3af', marginTop: '15px'}}>
+                  We'll only email you about price changes. Unsubscribe anytime.
+                </p>
+              </div>
+            </div>
+          )}
+          
           <div className="hero">
             <h1>📖 WizBook.io</h1>
             <p className="tagline">Professional AI Books for Business Leaders</p>
