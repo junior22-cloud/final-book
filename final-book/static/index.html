@@ -387,7 +387,7 @@
 
       <div class="pricing-grid">
         <!-- Basic Tier -->
-        <div class="pricing-card" onclick="redirectToPayment('basic')">
+        <div class="pricing-card" onclick="handleCheckout(document.getElementById('selectedTopic').textContent, 'basic')">
           <h3>BASIC</h3>
           <div class="price">$47 <span style="font-size: 1rem; color: #dc2626; text-decoration: line-through;">$67</span></div>
           <div style="color: #6b7280; margin-bottom: 25px;">24hr delivery</div>
