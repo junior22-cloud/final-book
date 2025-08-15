@@ -170,82 +170,72 @@ class WizBookTester:
         
         return all(generation_results) and any(edge_results)
 
-    def test_book_retrieval_and_pdf(self):
-        """Test GET /api/book/{book_id} and GET /api/book/{book_id}/pdf"""
+    def test_pdf_generation(self):
+        """Test GET /api/pdf - PDF generation with watermarking"""
         print("\n" + "="*60)
-        print("📚 BOOK RETRIEVAL & PDF GENERATION TESTS")
+        print("📄 PDF GENERATION TESTS")
         print("="*60)
         
-        if not self.generated_book_ids:
-            print("⚠️  No book IDs available for testing. Skipping book retrieval tests.")
-            return False
+        # Test 1: Basic PDF generation
+        topics = ["Python Programming", "Digital Marketing", "Personal Finance"]
+        pdf_results = []
         
-        book_id = self.generated_book_ids[0]
-        
-        # Test 1: Book retrieval
-        print(f"\n🔍 Testing Book Retrieval for ID: {book_id}")
-        success, response = self.run_test(
-            "Book Retrieval", 
-            "GET", 
-            f"book/{book_id}", 
-            200,
-            timeout=30
-        )
-        
-        if success and isinstance(response, dict):
-            required_fields = ['id', 'book_request', 'content', 'status', 'word_count', 'created_at']
-            missing_fields = [field for field in required_fields if field not in response]
-            if missing_fields:
-                self.minor_issues.append(f"Book retrieval response missing fields: {missing_fields}")
-            else:
-                print(f"   Book ID: {response.get('id')}")
-                print(f"   Status: {response.get('status')}")
-                print(f"   Word Count: {response.get('word_count')}")
-        
-        # Test 2: PDF generation
-        print(f"\n🔍 Testing PDF Generation for ID: {book_id}")
-        pdf_success, pdf_response = self.run_test(
-            "PDF Generation", 
-            "GET", 
-            f"book/{book_id}/pdf", 
-            200,
-            timeout=120
-        )
-        
-        if pdf_success:
-            if isinstance(pdf_response, bytes) and len(pdf_response) > 1000:
-                print(f"   PDF Size: {pdf_response} bytes")
-                # Check if it's actually a PDF
-                if pdf_response[:4] == b'%PDF':
-                    print("   ✅ Valid PDF format detected")
+        for topic in topics:
+            print(f"\n🔍 Testing PDF generation for: {topic}")
+            success, response = self.run_test(
+                f"PDF Generation - {topic}", 
+                "GET", 
+                "pdf", 
+                200,
+                params={"topic": topic},
+                timeout=120
+            )
+            
+            if success:
+                if isinstance(response, bytes) and len(response) > 1000:
+                    print(f"   PDF Size: {len(response)} bytes")
+                    # Check if it's actually a PDF
+                    if response[:4] == b'%PDF':
+                        print("   ✅ Valid PDF format detected")
+                    else:
+                        self.minor_issues.append("PDF response doesn't start with PDF header")
                 else:
-                    self.minor_issues.append("PDF response doesn't start with PDF header")
-            else:
-                self.critical_failures.append("PDF Generation: Invalid or empty PDF response")
-                pdf_success = False
+                    self.critical_failures.append("PDF Generation: Invalid or empty PDF response")
+                    success = False
+            
+            pdf_results.append(success)
         
-        # Test 3: Non-existent book
-        print("\n🔍 Testing Non-existent Book Retrieval...")
-        fake_id = str(uuid.uuid4())
+        # Test 2: Error handling - Missing topic parameter
+        print("\n🔍 Testing PDF Error Handling - Missing Topic...")
         error_success, error_response = self.run_test(
-            "Non-existent Book Retrieval", 
+            "PDF Generation - Missing Topic", 
             "GET", 
-            f"book/{fake_id}", 
-            404,
+            "pdf", 
+            422,  # Expecting validation error
             timeout=30
         )
         
-        # Test 4: Non-existent book PDF
-        print("\n🔍 Testing Non-existent Book PDF...")
-        pdf_error_success, pdf_error_response = self.run_test(
-            "Non-existent Book PDF", 
-            "GET", 
-            f"book/{fake_id}/pdf", 
-            404,
-            timeout=30
-        )
+        # Test 3: Edge cases
+        print("\n🔍 Testing PDF Edge Cases...")
+        edge_cases = [
+            ("Special Characters", "Python & AI: 100% Success!"),
+            ("Unicode Topic", "机器学习与人工智能"),
+            ("Long Topic", "A" * 100),
+        ]
         
-        return success and pdf_success
+        edge_results = []
+        for case_name, topic in edge_cases:
+            success, response = self.run_test(
+                f"PDF Generation - {case_name}", 
+                "GET", 
+                "pdf", 
+                200,
+                params={"topic": topic},
+                timeout=90
+            )
+            edge_results.append(success)
+        
+        return all(pdf_results) and any(edge_results)
 
     def test_pricing_system(self):
         """Test GET /api/pricing - Premium pricing system"""
