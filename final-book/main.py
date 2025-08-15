@@ -377,7 +377,7 @@ if __name__ == "__main__":
     # Railway deployment optimization
     if os.getenv("RAILWAY_ENVIRONMENT"):
         HOST = "0.0.0.0"  # Forces public network for Railway
-        PORT = int(os.environ.get("PORT", 8001))  # Railway auto-sets PORT, default 8001
+        PORT = int(os.environ.get("PORT", 8080))  # Railway default port 8080
     else:
         HOST = "localhost"  # Local development
         PORT = 8001  # Match supervisor configuration
