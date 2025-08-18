@@ -5,6 +5,21 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import stripe
 from datetime import datetime
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class ContentSecurityPolicyMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' https://js.stripe.com; "
+            "frame-src https://js.stripe.com https://hooks.stripe.com; "
+            "connect-src 'self' https://api.stripe.com"
+        )
+        return response
+
+# Add this middleware
+app.add_middleware(ContentSecurityPolicyMiddleware)
 
 def get_config():
     return {
