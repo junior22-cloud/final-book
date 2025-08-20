@@ -1,128 +1,36 @@
-# main.py
-"""WizBook.io - Production-ready Backend + Frontend Serve + Stripe + CSP"""
-
 import os
-from datetime import datetime
-from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response, FileResponse
+from fastapi import FastAPI, UploadFile, Form
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from starlette.middleware.base import BaseHTTPMiddleware
+from dotenv import load_dotenv
 import stripe
 
-# Load environment variables
+# Load .env if you have one
 load_dotenv()
 
-# =========================
-# 1️⃣ CREATE APP
-# =========================
-app = FastAPI(title="WizBook Generator", version="1.0")
+app = FastAPI()
 
-# =========================
-# 2️⃣ CORS
-# =========================
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://wizbook.io",
-        "http://localhost:8001",
-        "http://127.0.0.1:8001",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Example: Serve static files if needed
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# =========================
-# 3️⃣ CSP
-# =========================
-class ContentSecurityPolicyMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
-        response: Response = await call_next(request)
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' https://js.stripe.com; "
-            "frame-src https://js.stripe.com; "
-            "connect-src https://api.stripe.com"
-        )
-        return response
+# Example route
+@app.get("/")
+def home():
+    return {"message": "FastAPI on Railway is live!"}
 
-app.add_middleware(ContentSecurityPolicyMiddleware)
+# Example Stripe endpoint
+@app.post("/create-payment-intent")
+async def create_payment(amount: int = Form(...)):
+    stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
+    intent = stripe.PaymentIntent.create(
+        amount=amount,
+        currency="usd"
+    )
+    return {"client_secret": intent.client_secret}
 
-# =========================
-# 4️⃣ STRIPE
-# =========================
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "sk_test_placeholder")
-STRIPE_PRODUCTS = {
-    "basic": {"price_id": os.getenv("STRIPE_BASIC_PRICE")},
-    "pro": {"price_id": os.getenv("STRIPE_PRO_PRICE")},
-    "whitelabel": {"price_id": os.getenv("STRIPE_BUSINESS_PRICE")},
-}
-
-# =========================
-# 5️⃣ API ROUTES
-# =========================
-@app.get("/api/")
-async def health_check():
-    return {
-        "status": "healthy",
-        "app": "WizBook Generator",
-        "timestamp": datetime.now().isoformat(),
-    }
-
-@app.post("/api/create-checkout-session")
-async def create_checkout_session(request: Request):
-    data = await request.json()
-    topic = data.get("topic", "General Book")
-    tier = data.get("tier", "pro")
-
-    price_id = STRIPE_PRODUCTS.get(tier, STRIPE_PRODUCTS["pro"])["price_id"]
-    if not price_id:
-        raise HTTPException(status_code=500, detail="Stripe Price ID not configured")
-
-    try:
-        session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            line_items=[{"price": price_id, "quantity": 1}],
-            mode="payment",
-            success_url=f"https://wizbook.io/success?topic={topic}&tier={tier}",
-            cancel_url=f"https://wizbook.io/cancel?topic={topic}",
-            metadata={"topic": topic, "tier": tier},
-        )
-        return {
-            "status": "success",
-            "checkout_url": session.url,
-            "session_id": session.id,
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-# =========================
-# 6️⃣ STATIC FILES
-# =========================
-# This ensures `/` serves your built frontend (index.html)
-app.mount("/", StaticFiles(directory="final-book/static", html=True), name="static")
-
-# =========================
-# 7️⃣ MAIN ENTRYPOINT
-# =========================
+# Ensure proper port for Railway
 if __name__ == "__main__":
-    import sys
-    from fastapi.middleware.wsgi import WSGIMiddleware
-    from flask import Flask
-
-    # Serve FastAPI + HTML together using Flask runner
-    flask_app = Flask(__name__, static_folder="final-book/static", static_url_path="")
-
-    # Root route → index.html
-    @flask_app.route("/")
-    def serve_index():
-        return FileResponse(os.path.join("final-book/static", "index.html"))
-
-    # Mount FastAPI under /api
-    flask_app.wsgi_app = WSGIMiddleware(app)
-
-    port = int(os.environ.get("PORT", 8080))
-    flask_app.run(host="0.0.0.0", port=port)
+    port = int(os.environ.get("PORT", 8000))
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=port)
 
