@@ -1,7 +1,123 @@
-fastapi==0.110.1
-python-dotenv>=1.0.1
-python-multipart>=0.0.9
-reportlab>=4.0.0
-stripe>=5.0.0
-waitress>=2.2.0
+# =========================
+# WIZBOOK.IO - PRODUCTION DEPENDENCIES
+# =========================
+# Pinned versions for absolute stability and reproducibility
+# Generated: 2025-08-20
+# Environment: Production (Railway)
 
+# ==================== CORE FRAMEWORK ====================
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-dotenv==1.0.0
+python-multipart==0.0.6
+
+# ==================== SECURITY & AUTH ====================
+stripe==7.0.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+cryptography==41.0.7
+
+# ==================== DATABASE & CACHE ====================
+# Uncomment your database driver (choose one)
+# PostgreSQL
+# psycopg2-binary==2.9.7
+# asyncpg==0.28.0
+
+# SQLite (development only)
+# sqlite3 (built-in)
+
+# Redis (for caching/sessions)
+# redis==5.0.1
+
+# ORM (optional)
+# sqlalchemy==2.0.23
+# alembic==1.12.1
+
+# ==================== PERFORMANCE & MONITORING ====================
+gunicorn==21.2.0
+httpx==0.25.2
+aiohttp==3.9.1
+uvloop==0.19.0
+orjson==3.9.10
+python-json-logger==2.0.7
+structlog==23.2.0
+
+# ==================== UTILITIES & HELPERS ====================
+pydantic==2.5.0
+pydantic-settings==2.1.0
+email-validator==2.0.0
+python-dateutil==2.8.2
+pytz==2023.3.post1
+typing-extensions==4.8.0
+requests==2.31.0
+beautifulsoup4==4.12.2
+lxml==4.9.3
+
+# ==================== FILE PROCESSING ====================
+pillow==10.0.1
+pygments==2.16.1
+markdown==3.5.1
+python-magic==0.4.27
+filetype==1.2.0
+
+# ==================== ASYNC & CONCURRENCY ====================
+anyio==3.7.1
+asgiref==3.7.2
+concurrent-log-handler==0.9.20
+
+# ==================== ENVIRONMENT SPECIFIC ====================
+# Development only (remove in production if needed)
+watchfiles==0.20.0
+debugpy==1.6.7
+ipdb==0.13.13
+
+# ==================== OPTIONAL ENHANCEMENTS ====================
+# Uncomment as needed for your specific features
+
+# PDF Generation
+# reportlab==4.0.5
+# pypdf2==3.0.1
+# weasyprint==58.0
+
+# Image Processing
+# opencv-python-headless==4.8.1.78
+# numpy==1.25.2
+
+# AI/ML Features
+# openai==1.3.0
+# transformers==4.34.1
+# torch==2.1.0
+# langchain==0.0.346
+
+# Email Services
+# sendgrid==6.11.0
+# smtplib (built-in)
+
+# Cloud Storage
+# boto3==1.28.65
+# google-cloud-storage==2.10.0
+
+# ==================== SECURITY ADVISORIES ====================
+# Security patches for known vulnerabilities
+certifi==2023.7.22
+charset-normalizer==3.3.2
+urllib3==2.0.7
+idna==3.4
+
+# ==================== PLATFORM SPECIFIC ====================
+# Railway deployment optimizations
+railway==0.3.0
+
+# =========================
+# INSTALLATION NOTES:
+# =========================
+# Production: pip install -r requirements.txt --no-cache-dir
+# Development: pip install -r requirements.txt
+# Minimal: pip install fastapi uvicorn python-dotenv stripe
+
+# For ARM architectures (Apple Silicon/M1):
+# Use: pip install -r requirements.txt --no-binary :all:
+
+# For performance: 
+# UVICORN_WORKERS=4 uvicorn main:app --host 0.0.0.0 --port $PORT
