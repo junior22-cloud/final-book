@@ -10,7 +10,6 @@ from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBearer
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.middleware import Middleware
 import stripe
 import logging
 from typing import Optional
@@ -37,31 +36,29 @@ async def lifespan(app: FastAPI):
 # =========================
 # 1️⃣ CREATE APP WITH LIFECYCLE
 # =========================
-middleware = [
-    Middleware(
-        CORSMiddleware,
-        allow_origins=[
-            "https://wizbook.io",
-            "https://www.wizbook.io",
-            "http://localhost:8080",
-            "http://127.0.0.1:8080",
-            "https://*.up.railway.app",
-            os.getenv("RAILWAY_STATIC_URL", ""),
-        ],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-]
-
 app = FastAPI(
     title="WizBook Generator API",
     description="Professional book generation service with Stripe payments",
     version="2.0.0",
     lifespan=lifespan,
-    middleware=middleware,
     docs_url="/api/docs",
     redoc_url="/api/redoc"
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://wizbook.io",
+        "https://www.wizbook.io",
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+        "https://*.up.railway.app",
+        os.getenv("RAILWAY_STATIC_URL", ""),
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # =========================
@@ -300,18 +297,3 @@ async def add_process_time_header(request: Request, call_next):
     process_time = (datetime.now() - start_time).total_seconds()
     response.headers["X-Process-Time"] = str(process_time)
     return response
-
-# =========================
-# 9️⃣ MAIN EXECUTION (DEV ONLY)
-# =========================
-if __name__ == "__main__":
-    # Local development only - Railway uses uvicorn directly
-    import uvicorn
-    port = int(os.environ.get("PORT", 8080))
-    uvicorn.run(
-        app, 
-        host="0.0.0.0", 
-        port=port,
-        log_level="info",
-        timeout_keep_alive=60
-    )
