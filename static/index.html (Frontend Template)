@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WizBook Generator - AI-Powered Book Creation</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>WizBook Generator</h1>
+            <p>Transform your ideas into professional books with AI</p>
+        </header>
+
+        <div class="pricing">
+            <div class="plan" data-tier="basic">
+                <h3>Basic</h3>
+                <div class="price">$47</div>
+                <ul>
+                    <li>100 pages</li>
+                    <li>Basic formatting</li>
+                    <li>PDF export</li>
+                </ul>
+                <button onclick="startCheckout('basic')">Get Started</button>
+            </div>
+
+            <div class="plan featured" data-tier="pro">
+                <h3>Professional</h3>
+                <div class="price">$97</div>
+                <ul>
+                    <li>300 pages</li>
+                    <li>Advanced formatting</li>
+                    <li>PDF+EPUB export</li>
+                    <li>Illustrations</li>
+                </ul>
+                <button onclick="startCheckout('pro')">Get Started</button>
+            </div>
+
+            <div class="plan" data-tier="business">
+                <h3>Business</h3>
+                <div class="price">$497</div>
+                <ul>
+                    <li>Unlimited pages</li>
+                    <li>White labeling</li>
+                    <li>Custom branding</li>
+                    <li>Priority support</li>
+                </ul>
+                <button onclick="startCheckout('business')">Get Started</button>
+            </div>
+        </div>
+
+        <div id="loading" class="hidden">
+            <div class="spinner"></div>
+            <p>Redirecting to secure checkout...</p>
+        </div>
+
+        <footer>
+            <p>© 2024 WizBook Generator. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
