@@ -24,9 +24,12 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application code to container
 COPY . .
 
+# Create startup script
+RUN echo '#!/bin/bash\nPORT=${PORT:-8080}\nexec uvicorn backend.server:app --host 0.0.0.0 --port $PORT --timeout-keep-alive 60' > start.sh && chmod +x start.sh
+
 # Expose the port (Railway will set PORT environment variable)
 EXPOSE 8080
 
 # Command to run the application using Uvicorn
-# Use shell form to expand environment variables
-CMD sh -c "uvicorn backend.server:app --host 0.0.0.0 --port ${PORT:-8080} -
+# Use startup script to handle PORT environment variable  
+CMD ["./start.sh"]
